@@ -29,7 +29,7 @@ interface BorderBeamProps {
   /**
    * The motion transition of the border beam.
    */
-//   transition?: any;
+  transition?: object;
   /**
    * The class name of the border beam.
    */

@@ -19,7 +19,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-inter), sans-serif;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 /* Cyber Reflection / Glassmorphism */
@@ -127,8 +127,28 @@ body {
   width: 0px;
 }
 
+/* Thin Scrollbar for modal panels */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 242, 254, 0.2) transparent;
+}
 
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
 
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 242, 254, 0.2);
+  border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 242, 254, 0.4);
+}
 
 /* Hide Scrollbar */
 .scrollbar-none {

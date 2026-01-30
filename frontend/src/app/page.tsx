@@ -19,16 +19,22 @@ import { useAnalysis } from "@/context/AnalysisContext";
 
 export default function Home() {
   const {
-    modality,
+    input,
     setModality,
-    text,
-    setText,
-    setAudioFile,
-    setVideoFile,
-    videoUrl,
-    setVideoUrl
+    setContent,
+    setFile,
   } = useAnalysis();
   const router = useRouter();
+  
+  // Derive values from input for backwards compatibility
+  const modality = input.modality;
+  const text = input.modality === "text" ? input.content : "";
+  const videoUrl = input.modality === "video" ? input.content : "";
+
+  const setText = (value: string) => setContent(value);
+  const setVideoUrl = (value: string) => setContent(value);
+  const setAudioFile = (file: File | null) => setFile(file);
+  const setVideoFile = (file: File | null) => setFile(file);
 
   return (
     <div className="relative min-h-screen bg-[#050505] text-white p-6 md:p-12 overflow-hidden">
