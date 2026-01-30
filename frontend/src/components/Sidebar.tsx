@@ -4,14 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    Plus,
     LayoutDashboard,
-    Video,
-    Hash,
+    Activity,
+    Scale,
+    TrendingUp,
+    Compass,
     FileText,
-    History,
-    Sparkles,
-    ChevronRight
+    Settings,
 } from "lucide-react";
 import { BorderBeam } from "./border-beam";
 import BrandIcon from "./BrandIcon";
@@ -20,10 +19,12 @@ import { LogOut } from "lucide-react";
 
 const NAV_ITEMS = [
     { icon: <LayoutDashboard size={18} />, label: "Pulse", href: "/dashboard" },
-    { icon: <Video size={18} />, label: "Scanner", href: "/analyze" },
-    { icon: <Hash size={18} />, label: "Topics", href: "/topic" },
+    { icon: <Activity size={18} />, label: "Sentiment Analysis", href: "/sentiment-analysis" },
+    { icon: <Scale size={18} />, label: "Detecting Bias", href: "/detecting-bias" },
+    { icon: <TrendingUp size={18} />, label: "Trend Analysis", href: "/trend-analysis" },
+    { icon: <Compass size={18} />, label: "Browse", href: "/browse" },
     { icon: <FileText size={18} />, label: "Reports", href: "/reports" },
-    { icon: <History size={18} />, label: "Archive", href: "/history" },
+    { icon: <Settings size={18} />, label: "Settings", href: "/settings" },
 ];
 
 export default function Sidebar() {
@@ -38,16 +39,16 @@ export default function Sidebar() {
                 <BorderBeam size={250} duration={8} delay={0} colorFrom="#00f2fe" colorTo="#ff0080" />
             </div>
 
-            {/* Branding */}
-            <div className="flex items-center gap-3 py-6 mb-8 group relative z-10">
+            {/* Branding - Click to go to Pulse (Dashboard) */}
+            <Link href="/dashboard" className="flex items-center gap-3 py-6 mb-8 group relative z-10 hover:opacity-80 transition-opacity">
                 <BrandIcon size="md" />
                 <span className="text-xl font-black tracking-tighter uppercase">
                     Sen<span className="aurora-text">tira</span>
                 </span>
-            </div>
+            </Link>
 
             {/* Navigation */}
-            <nav className="flex-1 space-y-2 relative z-10">
+            <nav className="flex-1 space-y-2 relative z-10 overflow-y-auto scrollbar-none">
                 {NAV_ITEMS.map((item) => {
                     const isActive = pathname === item.href;
                     return (

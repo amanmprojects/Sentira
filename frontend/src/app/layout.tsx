@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs';
 import "./globals.css";
 import MainWrapper from "@/components/MainWrapper";
+import { AnalysisProvider } from "@/context/AnalysisContext";
 
 const inter = Inter({
     variable: "--font-inter",
@@ -30,9 +31,11 @@ export default function RootLayout({
                 <body
                     className={`${inter.variable} ${spaceGrotesk.variable} antialiased selection:bg-brand-primary/30 min-h-screen bg-[#020617]`}
                 >
-                    <MainWrapper>
-                        {children}
-                    </MainWrapper>
+                    <AnalysisProvider>
+                        <MainWrapper>
+                            {children}
+                        </MainWrapper>
+                    </AnalysisProvider>
                 </body>
             </html>
         </ClerkProvider>
