@@ -29,4 +29,5 @@ app.include_router(videos_router)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Enable reload for development
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

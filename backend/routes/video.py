@@ -88,11 +88,23 @@ async def analyze_reel(request: ReelAnalysisRequest, enable_fact_check: bool = F
     temp_file_path = None
 
     try:
+        print(f"DEBUG: Processing Reel Analysis for URL: {request.post_url}")
         # Check Cache
         cache = get_cache()
-        cached_result = cache.get(request.post_url)
+        cache_key = f"reel:{request.post_url}"
+        cached_result = cache.get(cache_key)
         if cached_result:
-            return EnhancedReelAnalysis(**cached_result)
+            try:
+                # Validate that the cached data matches the expected model
+                return EnhancedReelAnalysis(**cached_result)
+            except Exception as e:
+                print(f"CACHE TYPE MISMATCH for {cache_key}: {e}")
+                print(f"DEBUG: Invalidating cache keys for {request.post_url}")
+                # If cache is corrupted/wrong type, invalidate it and continue
+                cache.invalidate(request.post_url) 
+                # Also invalidate the prefixed keys to be safe
+                cache.invalidate(f"reel:{request.post_url}")
+                cache.invalidate(f"sentiment:{request.post_url}")
 
         async with httpx.AsyncClient(timeout=60.0) as http_client:
             downloader_url = f"{DOWNLOADER_BASE_URL}/api/video"
@@ -138,6 +150,7 @@ async def analyze_reel(request: ReelAnalysisRequest, enable_fact_check: bool = F
         transcript_result, character_result = await asyncio.gather(
             analyze_transcript_faster(), analyze_characters_faster()
         )
+        print(f"DEBUG: Analysis results for {request.post_url} received.")
 
         analysis = EnhancedReelAnalysis(
             main_summary=transcript_result.main_summary,
@@ -148,6 +161,7 @@ async def analyze_reel(request: ReelAnalysisRequest, enable_fact_check: bool = F
             suggestions=[],
             analysis_timestamp=time.time(),
         )
+        print(f"DEBUG: EnhancedReelAnalysis object created successfully.")
 
         analysis = await _extract_character_frames(analysis, temp_file_path)
 
@@ -167,11 +181,12 @@ async def analyze_reel(request: ReelAnalysisRequest, enable_fact_check: bool = F
         analysis.possible_issues = [issue for issue in analysis.possible_issues if not any(kw in issue.lower() for kw in misinformation_keywords)]
 
         # Save to Cache
-        cache.set(request.post_url, analysis.model_dump())
-
+        cache.set(cache_key, analysis.model_dump())
+        print(f"DEBUG: Successfully returning analysis for {request.post_url}")
         return analysis
 
     except Exception as e:
+        print(f"ERROR in analyze_reel: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to analyze reel: {str(e)}")
     finally:
         if myfile:
@@ -240,8 +255,9 @@ async def analyze_youtube(request: YouTubeAnalysisRequest, enable_fact_check: bo
             except: pass
 
 
-async def _perform_full_sentiment_analysis(temp_file_path: str, video_duration: int, cache_key: str):
+async def _perform_full_sentiment_analysis(temp_file_path: str, video_duration: int, raw_key: str):
     """Internal helper to run parallel Gemini analysis on a video file."""
+    cache_key = f"sentiment:{raw_key}"
     myfile = None
     try:
         myfile = client.files.upload(file=temp_file_path)
@@ -334,13 +350,23 @@ async def analyze_sentiment_url(request: ReelAnalysisRequest):
     """Dedicated sentiment/emotion analysis endpoint for URLs."""
     # Check Cache first
     cache = get_cache()
-    cached_result = cache.get(request.post_url)
+    cache_key = f"sentiment:{request.post_url}"
+    cached_result = cache.get(cache_key)
     if cached_result:
-        # Verify the video file actually exists
-        video_filename = cached_result.get("video_url", "").split("/")[-1]
-        if video_filename and (VIDEOS_DIR / video_filename).exists():
-            return cached_result
-        # If file missing, re-run analysis
+        try:
+            # Verify the video file actually exists
+            video_filename = cached_result.get("video_url", "").split("/")[-1]
+            if video_filename and (VIDEOS_DIR / video_filename).exists():
+                # Basic validation (sentiment data should have emotion_timeline)
+                if "emotion_timeline" in cached_result:
+                    return cached_result
+                else:
+                    print(f"CACHE INVALID for {cache_key}: missing emotion_timeline")
+        except Exception as e:
+            print(f"CACHE ERROR for {cache_key}: {e}")
+        
+        # If we get here, cache was invalid or file missing
+        cache.invalidate(cache_key)
 
     temp_file_path = None
     try:

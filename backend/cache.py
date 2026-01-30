@@ -34,6 +34,7 @@ class AnalysisCache:
         if cache_key in self.memory_cache:
             result, timestamp = self.memory_cache[cache_key]
             if time.time() - timestamp < CACHE_TTL:
+                print(f"CACHE HIT (memory): {url}")
                 return result
             else:
                 del self.memory_cache[cache_key]
@@ -51,6 +52,7 @@ class AnalysisCache:
                             cached["data"],
                             cached["timestamp"],
                         )
+                        print(f"CACHE HIT (file): {url}")
                         return cached["data"]
                     else:
                         # Remove stale file
@@ -77,6 +79,7 @@ class AnalysisCache:
                 )
         except Exception as e:
             print(f"Cache write error: {e}")
+        print(f"CACHE SET: {url}")
 
     def invalidate(self, url: str) -> None:
         """Remove cached result for URL."""
