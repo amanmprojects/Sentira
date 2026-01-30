@@ -108,6 +108,7 @@ export async function analyzeReel(
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ post_url: postUrl }),
+            cache: 'no-store',
         }
     );
 
@@ -131,6 +132,7 @@ export async function analyzeYouTube(
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ video_url: videoUrl }),
+            cache: 'no-store',
         }
     );
 
@@ -190,6 +192,7 @@ export async function analyzeVideo(file: File): Promise<VideoAnalysis> {
     const response = await fetch(`${API_BASE_URL}/analyze-video`, {
         method: 'POST',
         body: formData,
+        cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -222,6 +225,7 @@ export async function analyzeSentiment(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ post_url: videoUrl }),
+        cache: 'no-store',
     });
 
     if (!response.ok) {

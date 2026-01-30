@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
+import { SentimentAnalysisResponse, EnhancedReelAnalysis } from "@/lib/api";
 
 export type InputModality = "video" | "audio" | "text";
 
@@ -18,6 +19,18 @@ interface AnalysisContextType {
     setFile: (file: File | null) => void;
     clearInput: () => void;
     isInputValid: boolean;
+
+    // Global Results
+    sentimentData: SentimentAnalysisResponse | null;
+    reelData: EnhancedReelAnalysis | null;
+    setSentimentData: (data: SentimentAnalysisResponse | null) => void;
+    setReelData: (data: EnhancedReelAnalysis | null) => void;
+    isAnalyzing: boolean;
+    setIsAnalyzing: (isAnalyzing: boolean) => void;
+
+    // Auto-Pilot Mode
+    isAutoPilot: boolean;
+    setIsAutoPilot: (isAutoPilot: boolean) => void;
 }
 
 const defaultInput: AnalysisInput = {
@@ -30,6 +43,10 @@ const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined
 
 export function AnalysisProvider({ children }: { children: ReactNode }) {
     const [input, setInputState] = useState<AnalysisInput>(defaultInput);
+    const [sentimentData, setSentimentData] = useState<SentimentAnalysisResponse | null>(null);
+    const [reelData, setReelData] = useState<EnhancedReelAnalysis | null>(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isAutoPilot, setIsAutoPilot] = useState(false);
 
     const setInput = (newInput: AnalysisInput) => {
         setInputState(newInput);
@@ -37,21 +54,29 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
 
     const setModality = (modality: InputModality) => {
         setInputState((prev) => ({ ...prev, modality, content: "", file: null }));
+        setSentimentData(null);
+        setReelData(null);
     };
 
     const setContent = (content: string) => {
         setInputState((prev) => ({ ...prev, content }));
+        setSentimentData(null);
+        setReelData(null);
     };
 
     const setFile = (file: File | null) => {
         setInputState((prev) => ({ ...prev, file }));
+        setSentimentData(null);
+        setReelData(null);
     };
 
     const clearInput = () => {
         setInputState(defaultInput);
+        setSentimentData(null);
+        setReelData(null);
     };
 
-    const isInputValid = 
+    const isInputValid =
         input.content.trim().length > 0 || input.file !== null;
 
     return (
@@ -64,6 +89,14 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
                 setFile,
                 clearInput,
                 isInputValid,
+                sentimentData,
+                reelData,
+                setSentimentData,
+                setReelData,
+                isAnalyzing,
+                setIsAnalyzing,
+                isAutoPilot,
+                setIsAutoPilot,
             }}
         >
             {children}

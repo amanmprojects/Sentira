@@ -7,8 +7,6 @@ import {
     Video,
     Hash,
     ChevronRight,
-    Calendar,
-    Layers,
     Sparkles
 } from "lucide-react";
 import Link from "next/link";

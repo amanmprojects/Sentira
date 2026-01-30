@@ -14,9 +14,11 @@ import {
     CheckCircle,
     ArrowRight,
     X,
-    Sparkles,
+    Loader2,
+    Zap
 } from "lucide-react";
 import { useAnalysis, InputModality } from "@/context/AnalysisContext";
+import { analyzeSentiment, analyzeVideoUrl } from "@/lib/api";
 
 const MODALITY_OPTIONS: { id: InputModality; label: string; icon: React.ReactNode; description: string }[] = [
     { id: "video", label: "Video", icon: <Video size={20} />, description: "Instagram URL or upload" },
@@ -53,11 +55,17 @@ const ACTION_CARDS = [
 
 export default function Dashboard() {
     const router = useRouter();
-    const { input, setModality, setContent, setFile, isInputValid, clearInput } = useAnalysis();
+    const {
+        input, setModality, setContent, setFile, isInputValid, clearInput,
+        setSentimentData, setReelData, isAnalyzing, setIsAnalyzing,
+        isAutoPilot, setIsAutoPilot
+    } = useAnalysis();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isDone, setIsDone] = useState(false);
 
     const handleModalityChange = (modality: InputModality) => {
         setModality(modality);
+        setIsDone(false);
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,33 +73,74 @@ export default function Dashboard() {
         if (file) {
             setFile(file);
             setContent(file.name);
+            setIsDone(false);
         }
     };
 
-    const handleActionCardClick = (href: string) => {
-        if (!isInputValid) {
-            return;
-        }
+    const handleNavigate = (href: string) => {
+        if (!isInputValid) return;
         router.push(href);
+    };
+
+    const handleLaunch = async () => {
+        if (!isInputValid || isAnalyzing) return;
+        setIsAnalyzing(true);
+        setIsDone(false);
+        try {
+            const [sentimentPromise, reelPromise] = [
+                analyzeSentiment(input.content),
+                analyzeVideoUrl(input.content).then(res => res.data)
+            ];
+
+            if (isAutoPilot) {
+                // In Auto-Pilot, navigate immediately and let background handle data
+                sentimentPromise.then(setSentimentData).catch(console.error);
+                reelPromise.then(setReelData).catch(console.error);
+                router.push("/sentiment-analysis");
+            } else {
+                // In manual mode, wait for completion to show "Done" on dashboard
+                await Promise.all([
+                    sentimentPromise.then(setSentimentData).catch(console.error),
+                    reelPromise.then(setReelData).catch(console.error)
+                ]);
+                setIsDone(true);
+            }
+        } catch (error) {
+            console.error("Analysis launch failed:", error);
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     return (
         <div className="min-h-screen bg-[#050505] text-white p-4 lg:p-10">
             <div className="max-w-7xl mx-auto space-y-6">
-                {/* Dashboard Header */}
+                {/* Auto-Pilot Global Banner */}
+                <AnimatePresence>
+                    {isAutoPilot && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="p-4 rounded-2xl bg-aurora-cyan/10 border border-aurora-cyan/20 flex items-center justify-center gap-3 mb-8"
+                        >
+                            <Zap size={16} className="text-aurora-cyan animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-aurora-cyan">Neural Auto-Pilot Synchronized & Optimized</span>
+                            <Zap size={16} className="text-aurora-cyan animate-pulse" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <motion.header
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-8"
+                    className="mb-8"
                 >
-                    
                     <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-left">
                         <span className="aurora-text">Pulse</span>
                     </h1>
-                   
                 </motion.header>
 
-                {/* Multimodal Input Selector Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -100,54 +149,30 @@ export default function Dashboard() {
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-2 h-8 bg-aurora-cyan rounded-full"></div>
-                        <h2 className="text-lg font-black uppercase tracking-tight">
-                            Select Input Type
-                        </h2>
+                        <h2 className="text-lg font-black uppercase tracking-tight">Select Input Type</h2>
                     </div>
 
-                    {/* Modality Tabs */}
                     <div className="flex gap-3 mb-8">
                         {MODALITY_OPTIONS.map((option) => {
                             const isActive = input.modality === option.id;
                             return (
-                                <motion.button
+                                <button
                                     key={option.id}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
                                     onClick={() => handleModalityChange(option.id)}
-                                    className={`flex-1 px-6 py-5 rounded-2xl border transition-all duration-300 ${
-                                        isActive
-                                            ? "bg-aurora-cyan/10 border-aurora-cyan/50 text-white"
-                                            : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80"
-                                    }`}
+                                    className={`flex-1 px-6 py-5 rounded-2xl border transition-all duration-300 ${isActive
+                                        ? "bg-aurora-cyan/10 border-aurora-cyan/50 text-white"
+                                        : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                                        }`}
                                 >
                                     <div className="flex flex-col items-center gap-2">
-                                        <div
-                                            className={`transition-colors ${
-                                                isActive ? "text-aurora-cyan" : ""
-                                            }`}
-                                        >
-                                            {option.icon}
-                                        </div>
-                                        <span className="font-black text-xs uppercase tracking-widest">
-                                            {option.label}
-                                        </span>
-                                        <span className="text-[10px] text-white/30 hidden md:block">
-                                            {option.description}
-                                        </span>
+                                        <div className={isActive ? "text-aurora-cyan" : ""}>{option.icon}</div>
+                                        <span className="font-black text-xs uppercase tracking-widest">{option.label}</span>
                                     </div>
-                                    {isActive && (
-                                        <motion.div
-                                            layoutId="modality-indicator"
-                                            className="w-full h-1 bg-aurora-cyan rounded-full mt-3"
-                                        />
-                                    )}
-                                </motion.button>
+                                </button>
                             );
                         })}
                     </div>
 
-                    {/* Dynamic Input Area */}
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={input.modality}
@@ -159,10 +184,12 @@ export default function Dashboard() {
                             {input.modality === "video" && (
                                 <VideoInput
                                     value={input.content}
-                                    onChange={setContent}
+                                    onChange={(val: string) => { setContent(val); setIsDone(false); }}
                                     onFileUpload={handleFileUpload}
                                     fileInputRef={fileInputRef}
-                                    onClear={clearInput}
+                                    onClear={() => { clearInput(); setIsDone(false); }}
+                                    onLaunch={handleLaunch}
+                                    isDone={isDone}
                                 />
                             )}
                             {input.modality === "audio" && (
@@ -170,290 +197,204 @@ export default function Dashboard() {
                                     value={input.content}
                                     onFileUpload={handleFileUpload}
                                     fileInputRef={fileInputRef}
-                                    onClear={clearInput}
+                                    onClear={() => { clearInput(); setIsDone(false); }}
+                                    onLaunch={handleLaunch}
+                                    isDone={isDone}
                                 />
                             )}
                             {input.modality === "text" && (
                                 <TextInput
                                     value={input.content}
-                                    onChange={setContent}
-                                    onClear={clearInput}
+                                    onChange={(val: string) => { setContent(val); setIsDone(false); }}
+                                    onClear={() => { clearInput(); setIsDone(false); }}
+                                    onLaunch={handleLaunch}
+                                    isDone={isDone}
                                 />
                             )}
                         </motion.div>
                     </AnimatePresence>
                 </motion.div>
 
-                {/* Action Cards Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="space-y-4"
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-2 h-8 bg-aurora-rose rounded-full"></div>
-                        <h2 className="text-lg font-black uppercase tracking-tight">
-                            Choose Analysis
-                        </h2>
+                <div className="space-y-4 pt-10">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="w-2 h-8 bg-aurora-rose rounded-full"></div>
+                            <h2 className="text-lg font-black uppercase tracking-tight">Intelligence Suites</h2>
+                        </div>
+                        <div className="flex gap-2">
+                            <div className={`px-2 py-1 rounded-md text-[8px] font-black border ${isAutoPilot ? 'border-aurora-rose text-aurora-rose bg-aurora-rose/5' : 'border-white/5 text-white/20 uppercase tracking-widest'}`}>
+                                {isAutoPilot ? "AUTO-PILOT ACTIVE" : "MANUAL MODE"}
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid md:grid-cols-3 gap-6">
                         {ACTION_CARDS.map((card, index) => (
                             <ActionCard
                                 key={card.id}
                                 card={card}
                                 index={index}
                                 isInputValid={isInputValid}
-                                onClick={() => handleActionCardClick(card.href)}
+                                onClick={() => handleNavigate(card.href)}
                             />
                         ))}
                     </div>
-
-                    {!isInputValid && (
-                        <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="text-center text-white/30 text-xs mt-4"
-                        >
-                            Please provide input above to enable analysis
-                        </motion.p>
-                    )}
-                </motion.div>
+                </div>
             </div>
         </div>
     );
 }
 
-// Video Input Component
-function VideoInput({
-    value,
-    onChange,
-    onFileUpload,
-    fileInputRef,
-    onClear,
-}: {
-    value: string;
-    onChange: (value: string) => void;
-    onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    fileInputRef: React.RefObject<HTMLInputElement | null>;
-    onClear: () => void;
-}) {
-    const [inputMode, setInputMode] = useState<"url" | "upload">("url");
+function VideoInput({ value, onChange, onFileUpload, fileInputRef, onClear, onLaunch, isDone }: any) {
+    const { isAutoPilot, setIsAutoPilot, isAnalyzing } = useAnalysis();
+    const [mode, setMode] = useState<"url" | "upload">("url");
 
     return (
-        <div className="space-y-4">
-            {/* Input Mode Toggle */}
-            <div className="flex gap-2 mb-4">
-                <button
-                    onClick={() => setInputMode("url")}
-                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                        inputMode === "url"
-                            ? "bg-aurora-cyan/20 text-aurora-cyan border border-aurora-cyan/30"
-                            : "bg-white/5 text-white/40 border border-white/10 hover:bg-white/10"
-                    }`}
-                >
-                    <LinkIcon size={14} className="inline mr-2" />
-                    URL
-                </button>
-                <button
-                    onClick={() => setInputMode("upload")}
-                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                        inputMode === "upload"
-                            ? "bg-aurora-cyan/20 text-aurora-cyan border border-aurora-cyan/30"
-                            : "bg-white/5 text-white/40 border border-white/10 hover:bg-white/10"
-                    }`}
-                >
-                    <Upload size={14} className="inline mr-2" />
-                    Upload
-                </button>
+        <div className="space-y-6">
+            <div className="flex gap-2">
+                <button onClick={() => setMode("url")} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === "url" ? "bg-aurora-cyan/20 text-aurora-cyan border border-aurora-cyan/30" : "bg-white/5 text-white/40 border border-white/10"}`}>URL SCAN</button>
+                <button onClick={() => setMode("upload")} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mode === "upload" ? "bg-aurora-cyan/20 text-aurora-cyan border border-aurora-cyan/30" : "bg-white/5 text-white/40 border border-white/10"}`}>UPLOAD</button>
             </div>
 
-            {inputMode === "url" ? (
+            {mode === "url" ? (
                 <div className="relative">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-aurora-cyan">
-                        <LinkIcon size={18} />
-                    </div>
                     <input
                         type="url"
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        placeholder="Paste Instagram Reel URL here..."
-                        className="w-full px-14 py-5 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-aurora-cyan/50 focus:bg-white/10 transition-all font-medium"
+                        placeholder="Paste Instagram Reel / YouTube URL..."
+                        className="w-full px-6 py-5 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:outline-none focus:border-aurora-cyan/50 transition-all"
                     />
-                    {value && (
-                        <button
-                            onClick={onClear}
-                            className="absolute right-5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-                        >
-                            <X size={18} />
-                        </button>
-                    )}
+                    {value && <button onClick={onClear} className="absolute right-5 top-5 text-white/20 hover:text-white"><X size={18} /></button>}
                 </div>
             ) : (
-                <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center cursor-pointer hover:border-aurora-cyan/30 hover:bg-white/5 transition-all"
-                >
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="video/*"
-                        onChange={onFileUpload}
-                        className="hidden"
-                    />
-                    <Upload className="mx-auto mb-3 text-white/30" size={32} />
-                    <p className="text-white/50 text-sm font-medium">
-                        {value || "Click to upload video file"}
-                    </p>
-                    <p className="text-white/20 text-xs mt-1">MP4, MOV, AVI supported</p>
+                <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center cursor-pointer hover:border-aurora-cyan/30 transition-all">
+                    <input ref={fileInputRef} type="file" accept="video/*" onChange={onFileUpload} className="hidden" />
+                    <Upload className="mx-auto mb-2 text-white/20" size={24} />
+                    <p className="text-white/40 text-xs font-black uppercase">{value || "Drop Intelligence Cache"}</p>
                 </div>
+            )}
+
+            {value && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pt-4 border-t border-white/5">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                        <div className="flex items-center gap-3">
+                            <Zap size={16} className={isAutoPilot ? "text-aurora-cyan animate-pulse" : "text-white/20"} />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Neural Auto-Pilot</span>
+                        </div>
+                        <button onClick={() => setIsAutoPilot(!isAutoPilot)} className={`w-10 h-5 rounded-full relative transition-all ${isAutoPilot ? "bg-aurora-cyan" : "bg-white/10"}`}>
+                            <motion.div animate={{ x: isAutoPilot ? 22 : 4 }} className="absolute top-1 w-3 h-3 rounded-full bg-white" />
+                        </button>
+                    </div>
+                    <button
+                        onClick={onLaunch}
+                        disabled={isAnalyzing}
+                        className={`w-full py-5 rounded-xl font-black uppercase tracking-[0.2em] italic text-xs transition-all disabled:opacity-50 ${isDone
+                            ? "bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                            : "bg-aurora-cyan text-black shadow-[0_0_20px_rgba(0,242,254,0.3)] hover:scale-[1.01]"
+                            }`}
+                    >
+                        {isAnalyzing ? (
+                            <div className="flex items-center justify-center gap-2">
+                                <Loader2 className="animate-spin" size={16} />
+                                SENTIRA SYNCHRONIZING...
+                            </div>
+                        ) : isDone ? (
+                            <div className="flex items-center justify-center gap-2">
+                                <CheckCircle size={16} />
+                                ANALYSIS COMPLETE | READY FOR REVIEW
+                            </div>
+                        ) : (
+                            "Launch Neural Engine"
+                        )}
+                    </button>
+                </motion.div>
             )}
         </div>
     );
 }
 
-// Audio Input Component
-function AudioInput({
-    value,
-    onFileUpload,
-    fileInputRef,
-    onClear,
-}: {
-    value: string;
-    onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    fileInputRef: React.RefObject<HTMLInputElement | null>;
-    onClear: () => void;
-}) {
+function AudioInput({ value, onFileUpload, fileInputRef, onClear, onLaunch, isDone }: any) {
+    const { isAnalyzing } = useAnalysis();
     return (
-        <div
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center cursor-pointer hover:border-aurora-cyan/30 hover:bg-white/5 transition-all"
-        >
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="audio/*"
-                onChange={onFileUpload}
-                className="hidden"
-            />
-            <Mic className="mx-auto mb-3 text-white/30" size={32} />
-            <p className="text-white/50 text-sm font-medium">
-                {value || "Click to upload audio file"}
-            </p>
-            <p className="text-white/20 text-xs mt-1">MP3, WAV, M4A supported</p>
+        <div className="space-y-6">
+            <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center cursor-pointer hover:border-aurora-cyan/30 transition-all">
+                <input ref={fileInputRef} type="file" accept="audio/*" onChange={onFileUpload} className="hidden" />
+                <Mic className="mx-auto mb-2 text-white/20" size={24} />
+                <p className="text-white/40 text-xs font-black uppercase">{value || "Select Audio Packet"}</p>
+            </div>
             {value && (
                 <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onClear();
-                    }}
-                    className="mt-3 px-4 py-2 bg-white/5 rounded-xl text-white/40 hover:text-white/60 text-xs font-medium transition-colors"
+                    onClick={onLaunch}
+                    disabled={isAnalyzing}
+                    className={`w-full py-5 rounded-xl font-black uppercase tracking-[0.2em] italic text-xs transition-all ${isDone
+                        ? "bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                        : "bg-aurora-cyan text-black shadow-[0_0_20px_rgba(0,242,254,0.3)]"
+                        }`}
                 >
-                    Clear
+                    {isAnalyzing ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <Loader2 className="animate-spin" size={16} />
+                            SENTIRA SCANNING...
+                        </div>
+                    ) : isDone ? (
+                        "DONE | SENSORY BUFFER READY"
+                    ) : (
+                        "Analyze Audio Stream"
+                    )}
                 </button>
             )}
         </div>
     );
 }
 
-// Text Input Component
-function TextInput({
-    value,
-    onChange,
-    onClear,
-}: {
-    value: string;
-    onChange: (value: string) => void;
-    onClear: () => void;
-}) {
+function TextInput({ value, onChange, onClear, onLaunch, isDone }: any) {
+    const { isAnalyzing } = useAnalysis();
     return (
-        <div className="relative">
-            <textarea
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder="Paste or type your content here for analysis..."
-                rows={6}
-                className="w-full px-6 py-5 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-aurora-cyan/50 focus:bg-white/10 transition-all font-medium resize-none"
-            />
-            <div className="flex justify-between items-center mt-2 px-2">
-                <span className="text-white/20 text-xs">{value.length} characters</span>
-                {value && (
-                    <button
-                        onClick={onClear}
-                        className="text-white/30 hover:text-white/60 text-xs font-medium transition-colors"
-                    >
-                        Clear
-                    </button>
-                )}
-            </div>
+        <div className="space-y-6">
+            <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={5} placeholder="Paste linguistic data..." className="w-full px-6 py-5 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/20 focus:outline-none focus:border-aurora-cyan/50 transition-all resize-none" />
+            {value && (
+                <button
+                    onClick={onLaunch}
+                    disabled={isAnalyzing}
+                    className={`w-full py-5 rounded-xl font-black uppercase tracking-[0.2em] italic text-xs transition-all ${isDone
+                        ? "bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                        : "bg-aurora-cyan text-black shadow-[0_0_20px_rgba(0,242,254,0.3)]"
+                        }`}
+                >
+                    {isAnalyzing ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <Loader2 className="animate-spin" size={16} />
+                            SENTIRA ANALYZING...
+                        </div>
+                    ) : isDone ? (
+                        "DONE | LINGUISTIC BUFFER READY"
+                    ) : (
+                        "Process Text Node"
+                    )}
+                </button>
+            )}
         </div>
     );
 }
 
-// Action Card Component
-function ActionCard({
-    card,
-    index,
-    isInputValid,
-    onClick,
-}: {
-    card: (typeof ACTION_CARDS)[0];
-    index: number;
-    isInputValid: boolean;
-    onClick: () => void;
-}) {
-    const colorMap = {
-        cyan: {
-            bg: "hover:bg-aurora-cyan/5",
-            border: "hover:border-aurora-cyan/30",
-            icon: "text-aurora-cyan",
-            glow: "group-hover:shadow-[0_0_30px_rgba(0,242,254,0.1)]",
-        },
-        rose: {
-            bg: "hover:bg-aurora-rose/5",
-            border: "hover:border-aurora-rose/30",
-            icon: "text-aurora-rose",
-            glow: "group-hover:shadow-[0_0_30px_rgba(255,0,128,0.1)]",
-        },
-        blue: {
-            bg: "hover:bg-aurora-blue/5",
-            border: "hover:border-aurora-blue/30",
-            icon: "text-aurora-blue",
-            glow: "group-hover:shadow-[0_0_30px_rgba(79,172,254,0.1)]",
-        },
-    };
-
-    const colors = colorMap[card.color as keyof typeof colorMap];
-
+function ActionCard({ card, index, isInputValid, onClick }: any) {
     return (
         <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}
             disabled={!isInputValid}
-            className={`group relative p-8 rounded-[2rem] cyber-glass border border-white/5 text-left transition-all duration-300 ${
-                colors.bg
-            } ${colors.border} ${colors.glow} ${
-                !isInputValid ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-            }`}
+            className={`group relative p-8 rounded-[2rem] cyber-glass border border-white/5 text-left transition-all ${card.color === 'cyan' ? 'hover:border-aurora-cyan/30' : card.color === 'rose' ? 'hover:border-aurora-rose/30' : 'hover:border-aurora-blue/30'
+                } ${!isInputValid ? "opacity-30 grayscale cursor-not-allowed" : "cursor-pointer"}`}
         >
-            <div
-                className={`p-4 rounded-2xl bg-white/5 inline-block mb-4 group-hover:bg-white/10 transition-colors`}
-            >
-                <div className={colors.icon}>{card.icon}</div>
+            <div className="flex justify-between items-start mb-6">
+                <div className={`p-4 rounded-2xl bg-white/5 ${card.color === 'cyan' ? 'text-aurora-cyan' : card.color === 'rose' ? 'text-aurora-rose' : 'text-aurora-blue'}`}>
+                    {card.icon}
+                </div>
             </div>
-            <h3 className="text-base font-black uppercase tracking-tight mb-2">
-                {card.title}
-            </h3>
-            <p className="text-white/40 text-xs leading-relaxed">{card.description}</p>
-            <ArrowRight
-                className={`absolute bottom-6 right-6 ${colors.icon} opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1`}
-                size={18}
-            />
+            <h3 className="text-sm font-black uppercase tracking-tighter mb-2 italic">{card.title}</h3>
+            <p className="text-white/30 text-[10px] leading-relaxed font-bold uppercase">{card.description}</p>
         </motion.button>
     );
 }

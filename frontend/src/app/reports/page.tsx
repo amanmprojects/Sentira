@@ -9,12 +9,106 @@ import {
     FileJson,
     Table as TableIcon,
     Sparkles,
-    Zap
+    Zap,
+    Check
 } from "lucide-react";
+import { useAnalysis } from "@/context/AnalysisContext";
+import { useState, useEffect } from "react";
+import { AnimatePresence } from "framer-motion";
+import jsPDF from "jspdf";
 
 export default function ReportsPage() {
+    const { sentimentData, reelData, isAutoPilot } = useAnalysis();
+    const [isSynthesizing, setIsSynthesizing] = useState(false);
+    const [isComplete, setIsComplete] = useState(false);
+    const [autoPilotStatus, setAutoPilotStatus] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (isAutoPilot && (sentimentData || reelData) && !isComplete) {
+            setAutoPilotStatus("Initializing Neural Synthesis... Accessing Data Vaults");
+
+            const step1 = setTimeout(() => {
+                setIsSynthesizing(true);
+                setAutoPilotStatus("Compiling Multimodal Patterns... Generating Intelligence PDF");
+            }, 3000);
+
+            const step2 = setTimeout(() => {
+                // Generate PDF
+                const doc = new jsPDF();
+
+                // Add Header
+                doc.setFontSize(22);
+                doc.setTextColor(0, 180, 200); // Darker Cyan for readability on white PDF
+                doc.text("SENTIRA NEURAL AUDIT REPORT", 20, 20);
+
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`GENERATED: ${new Date().toLocaleString()}`, 20, 30);
+                doc.text("SYSTEM: MULTIMODAL INTELLIGENCE ENGINE V1.0", 20, 35);
+
+                // Content Analysis Section
+                doc.setFontSize(16);
+                doc.setTextColor(0, 0, 0);
+                doc.text("1. SENTIMENT ANALYSIS", 20, 50);
+
+                doc.setFontSize(12);
+                if (sentimentData) {
+                    doc.text(`Confidence Score: ${Math.round(sentimentData.confidence * 100)}%`, 25, 60);
+                    doc.text(`Global Category: ${sentimentData.global_category}`, 25, 70);
+                    doc.text("Emotional Cues Detected:", 25, 80);
+
+                    sentimentData.emotion_timeline.slice(0, 5).forEach((seg, i) => {
+                        doc.text(`- ${seg.emotion} (${Math.round(seg.intensity * 100)}%) at ${seg.start.toFixed(1)}s`, 30, 90 + (i * 10));
+                    });
+                }
+
+                // Bias Detection Section
+                doc.setFontSize(16);
+                doc.text("2. BIAS & INTEGRITY AUDIT", 20, 150);
+
+                doc.setFontSize(12);
+                if (reelData) {
+                    const splitCommentary = doc.splitTextToSize(reelData.commentary_summary || "No data available", 160);
+                    doc.text(splitCommentary, 25, 160);
+
+                    doc.text("Detected Patterns:", 25, 190);
+                    reelData.possible_issues.slice(0, 3).forEach((issue, i) => {
+                        doc.text(`- ${issue}`, 30, 200 + (i * 10));
+                    });
+                }
+
+                // Save PDF
+                doc.save(`SENTIRA_REPORT_${new Date().getTime()}.pdf`);
+
+                setIsSynthesizing(false);
+                setIsComplete(true);
+                setAutoPilotStatus("Full Suite Analysis Complete. PDF Report Stored and Downloaded.");
+            }, 8000);
+
+            return () => {
+                clearTimeout(step1);
+                clearTimeout(step2);
+            };
+        }
+    }, [isAutoPilot, sentimentData, reelData, isComplete]);
+
     return (
-        <div className="min-h-screen bg-[#050505] text-white p-8 pt-12 overflow-hidden selection:bg-aurora-cyan/30">
+        <div className="min-h-screen bg-[#050505] text-white p-8 pt-12 overflow-x-hidden relative selection:bg-aurora-cyan/30">
+            {/* Auto-Pilot Status Banner */}
+            <AnimatePresence>
+                {isAutoPilot && (
+                    <motion.div
+                        initial={{ y: -100 }}
+                        animate={{ y: 0 }}
+                        exit={{ y: -100 }}
+                        className="fixed top-0 left-0 right-0 z-[60] py-3 bg-aurora-cyan text-black font-black uppercase text-[10px] tracking-[0.3em] flex items-center justify-center gap-4 shadow-[0_10px_30px_rgba(0,242,254,0.2)]"
+                    >
+                        {isComplete ? <Check size={14} /> : <Zap size={14} className="animate-pulse" />}
+                        {autoPilotStatus || "Neural Auto-Pilot Active: Finalizing Sequence"}
+                        {isComplete ? <Check size={14} /> : <Zap size={14} className="animate-pulse" />}
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <div className="max-w-7xl mx-auto space-y-12 relative z-10">
                 <motion.header
                     initial={{ opacity: 0, x: -20 }}

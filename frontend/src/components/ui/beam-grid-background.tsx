@@ -48,7 +48,12 @@ const BeamGridBackground: React.FC<BeamGridBackgroundProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const [isDarkMode, setIsDarkMode] = useState(false);
     const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-    const lastMouseMoveRef = useRef(Date.now());
+    const lastMouseMoveRef = useRef(0);
+
+    // Initialize lastMouseMoveRef on mount
+    useEffect(() => {
+        lastMouseMoveRef.current = Date.now();
+    }, []);
 
     // --- Dark Mode Detection ---
     useEffect(() => {

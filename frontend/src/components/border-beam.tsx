@@ -123,7 +123,7 @@ export const BorderBeam = ({
           boxShadow: glowEffect,
           borderRadius: beamBorderRadius ? `${beamBorderRadius}px` : undefined,
           ...style,
-        } as any}
+        } as React.CSSProperties & { offsetPath?: string; [key: string]: unknown }}
         initial={{ offsetDistance: `${initialOffset}%` }}
         animate={{
           offsetDistance: reverse

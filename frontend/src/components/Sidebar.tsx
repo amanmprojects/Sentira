@@ -15,20 +15,22 @@ import {
 import { BorderBeam } from "./border-beam";
 import BrandIcon from "./BrandIcon";
 import { UserButton, SignOutButton } from "@clerk/nextjs";
-import { LogOut } from "lucide-react";
+import { LogOut, Zap } from "lucide-react";
+import { useAnalysis } from "@/context/AnalysisContext";
 
 const NAV_ITEMS = [
-    { icon: <LayoutDashboard size={18} />, label: "Pulse", href: "/dashboard" },
-    { icon: <Activity size={18} />, label: "Sentiment Analysis", href: "/sentiment-analysis" },
-    { icon: <Scale size={18} />, label: "Detecting Bias", href: "/detecting-bias" },
-    { icon: <TrendingUp size={18} />, label: "Trend Analysis", href: "/trend-analysis" },
-    { icon: <Compass size={18} />, label: "Browse", href: "/browse" },
-    { icon: <FileText size={18} />, label: "Reports", href: "/reports" },
-    { icon: <Settings size={18} />, label: "Settings", href: "/settings" },
+    { icon: <LayoutDashboard size={20} />, label: "Pulse", href: "/dashboard" },
+    { icon: <Activity size={20} />, label: "Sentiment Analysis", href: "/sentiment-analysis" },
+    { icon: <Scale size={20} />, label: "Detecting Bias", href: "/detecting-bias" },
+    { icon: <TrendingUp size={20} />, label: "Trend Analysis", href: "/trend-analysis" },
+    { icon: <Compass size={20} />, label: "Browse", href: "/browse" },
+    { icon: <FileText size={20} />, label: "Reports", href: "/reports" },
+    { icon: <Settings size={20} />, label: "Settings", href: "/settings" },
 ];
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const { isAutoPilot, isAnalyzing } = useAnalysis();
     const isFullWidthPage = pathname === "/" || pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up") || pathname.startsWith("/docs");
 
     if (isFullWidthPage) return null;
@@ -70,7 +72,7 @@ export default function Sidebar() {
                                 <div className={`mr-4 transition-colors ${isActive ? "text-aurora-cyan" : "group-hover:text-aurora-cyan"}`}>
                                     {item.icon}
                                 </div>
-                                <span className={`font-black tracking-[0.1em] text-[10px] uppercase`}>
+                                <span className={`font-black tracking-[0.05em] text-[13px] uppercase`}>
                                     {item.label}
                                 </span>
                             </motion.div>
@@ -84,19 +86,34 @@ export default function Sidebar() {
                 <div className="p-6 rounded-[2rem] bg-white/5 border border-white/10 space-y-4 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-aurora-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <div className="flex items-center justify-between relative z-10">
-                        <span className="text-[10px] uppercase font-black tracking-widest text-white/20">Neural Engine</span>
-                        <div className="w-2 h-2 rounded-full bg-aurora-cyan animate-pulse shadow-[0_0_10px_#00f2fe]"></div>
+                        <span className="text-[11px] uppercase font-black tracking-widest text-white/30">
+                            {isAutoPilot ? "Automation Link" : "Neural Engine"}
+                        </span>
+                        <div className={`w-2.5 h-2.5 rounded-full ${isAutoPilot ? 'bg-aurora-rose animate-spin rounded-[1px]' : 'bg-aurora-cyan animate-pulse'} shadow-[0_0_12px_currentColor]`}></div>
                     </div>
-                    <div className="space-y-1 relative z-10">
-                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: "75%" }}
-                                className="h-full bg-aurora-cyan"
-                            />
+
+                    {isAutoPilot ? (
+                        <div className="relative z-10 py-1">
+                            <div className="flex items-center gap-2 text-aurora-rose">
+                                <Zap size={14} className="animate-bounce" />
+                                <span className="text-[10px] font-black uppercase tracking-tighter italic">Neural Auto-Pilot Active</span>
+                            </div>
                         </div>
-                        <p className="text-[9px] font-bold text-white/30 uppercase tracking-tighter">Usage Status: 75% Peak</p>
-                    </div>
+                    ) : (
+                        <div className="space-y-1 relative z-10">
+                            <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: isAnalyzing ? "100%" : "75%" }}
+                                    transition={{ duration: isAnalyzing ? 10 : 0.5 }}
+                                    className={`h-full ${isAnalyzing ? 'bg-aurora-rose' : 'bg-aurora-cyan'}`}
+                                />
+                            </div>
+                            <p className="text-[9px] font-bold text-white/30 uppercase tracking-tighter">
+                                {isAnalyzing ? "Processing Neural Packets..." : "Usage Status: 75% Peak"}
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-between px-2 py-4 border-t border-white/5">
@@ -110,8 +127,8 @@ export default function Sidebar() {
                             }}
                         />
                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-white">Active Node</span>
-                            <span className="text-[8px] font-bold uppercase text-white/20 tracking-tighter">Identity Verified</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-white">Active Node</span>
+                            <span className="text-[10px] font-bold uppercase text-white/40 tracking-tighter">Identity Verified</span>
                         </div>
                     </div>
 

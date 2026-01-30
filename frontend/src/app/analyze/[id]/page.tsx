@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import {
     ShieldAlert,
     AudioLines,
-    Eye,
-    Clock,
     Info,
     ChevronRight,
     Share2,
@@ -25,21 +22,19 @@ import type { EnhancedReelAnalysis, Claim } from "@/lib/api";
 
 export default function AnalysisResult() {
     const router = useRouter();
-    const [analysis, setAnalysis] = useState<EnhancedReelAnalysis | null>(null);
-    const [analyzedUrl, setAnalyzedUrl] = useState<string>('');
-
-    useEffect(() => {
-        // Retrieve analysis from sessionStorage
-        const storedResult = sessionStorage.getItem('analysisResult');
-        const storedUrl = sessionStorage.getItem('analyzedUrl');
-
-        if (storedResult) {
-            setAnalysis(JSON.parse(storedResult));
+    const [analysis, setAnalysis] = useState<EnhancedReelAnalysis | null>(() => {
+        if (typeof window !== 'undefined') {
+            const storedResult = sessionStorage.getItem('analysisResult');
+            return storedResult ? JSON.parse(storedResult) : null;
         }
-        if (storedUrl) {
-            setAnalyzedUrl(storedUrl);
+        return null;
+    });
+    const [analyzedUrl, setAnalyzedUrl] = useState<string>(() => {
+        if (typeof window !== 'undefined') {
+            return sessionStorage.getItem('analyzedUrl') || '';
         }
-    }, []);
+        return '';
+    });
 
     if (!analysis) {
         return (
