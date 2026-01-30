@@ -2,6 +2,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // ==================== Type Definitions ====================
 
+export type VideoSourceType = 'instagram' | 'youtube';
+
 export interface Character {
     race?: string;
     tone?: string;
@@ -78,6 +80,70 @@ export async function analyzeReel(
     }
 
     return response.json();
+}
+
+/**
+ * Analyze a YouTube video by URL
+ */
+export async function analyzeYouTube(
+    videoUrl: string,
+    enableFactCheck: boolean = true
+): Promise<EnhancedReelAnalysis> {
+    const response = await fetch(
+        `${API_BASE_URL}/analyze-video/youtube?enable_fact_check=${enableFactCheck}`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ video_url: videoUrl }),
+        }
+    );
+
+    if (!response.ok) {
+        const error: ApiError = await response.json();
+        throw new Error(error.detail || 'Failed to analyze YouTube video');
+    }
+
+    return response.json();
+}
+
+/**
+ * Auto-detect video platform and analyze accordingly
+ */
+export async function analyzeVideoUrl(
+    url: string,
+    enableFactCheck: boolean = true
+): Promise<{ data: EnhancedReelAnalysis; source: VideoSourceType }> {
+    const source = detectVideoSource(url);
+
+    if (source === 'youtube') {
+        const data = await analyzeYouTube(url, enableFactCheck);
+        return { data, source };
+    } else {
+        const data = await analyzeReel(url, enableFactCheck);
+        return { data, source };
+    }
+}
+
+/**
+ * Detect if a URL is from YouTube or Instagram
+ */
+export function detectVideoSource(url: string): VideoSourceType {
+    const youtubePatterns = [
+        /youtube\.com/i,
+        /youtu\.be/i,
+        /youtube-nocookie\.com/i
+    ];
+
+    for (const pattern of youtubePatterns) {
+        if (pattern.test(url)) {
+            return 'youtube';
+        }
+    }
+
+    // Default to instagram for all other URLs
+    return 'instagram';
 }
 
 /**

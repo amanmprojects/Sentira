@@ -17,7 +17,7 @@ import {
     Fingerprint,
     XCircle
 } from "lucide-react";
-import { analyzeReel, type EnhancedReelAnalysis } from "@/lib/api";
+import { analyzeReel, analyzeYouTube, detectVideoSource, type EnhancedReelAnalysis, type VideoSourceType } from "@/lib/api";
 import BeamGridBackground from "@/components/ui/beam-grid-background";
 
 export default function AnalyzePage() {
@@ -29,6 +29,7 @@ export default function AnalyzePage() {
     const [currentStep, setCurrentStep] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [analysisResult, setAnalysisResult] = useState<EnhancedReelAnalysis | null>(null);
+    const [videoSource, setVideoSource] = useState<VideoSourceType | null>(null);
 
     const startAnalysis = async () => {
         if (!urlInput.trim()) {
@@ -36,10 +37,14 @@ export default function AnalyzePage() {
             return;
         }
 
+        // Detect video source
+        const detectedSource = detectVideoSource(urlInput);
+        setVideoSource(detectedSource);
+
         setError(null);
         setIsAnalyzing(true);
         setProgress(0);
-        setCurrentStep('Connecting to source...');
+        setCurrentStep(`Connecting to ${detectedSource === 'youtube' ? 'YouTube' : 'Instagram'}...`);
 
         // Simulate initial progress while waiting for API
         const progressInterval = setInterval(() => {
@@ -61,7 +66,14 @@ export default function AnalyzePage() {
         }, 200);
 
         try {
-            const result = await analyzeReel(urlInput, true);
+            let result: EnhancedReelAnalysis;
+
+            if (detectedSource === 'youtube') {
+                result = await analyzeYouTube(urlInput, true);
+            } else {
+                result = await analyzeReel(urlInput, true);
+            }
+
             clearInterval(progressInterval);
             setProgress(100);
             setCurrentStep('Analysis complete!');
@@ -72,6 +84,7 @@ export default function AnalyzePage() {
                 // Store result in sessionStorage for the results page
                 sessionStorage.setItem('analysisResult', JSON.stringify(result));
                 sessionStorage.setItem('analyzedUrl', urlInput);
+                sessionStorage.setItem('videoSource', detectedSource);
                 router.push(`/analyze/${encodeURIComponent(urlInput)}`);
             }, 1000);
         } catch (err) {
@@ -181,7 +194,7 @@ export default function AnalyzePage() {
                                         type="text"
                                         value={urlInput}
                                         onChange={(e) => setUrlInput(e.target.value)}
-                                        placeholder="ENTER INSTAGRAM REEL URL..."
+                                        placeholder="ENTER VIDEO URL..."
                                         disabled={isAnalyzing}
                                         className="w-full bg-white/5 border-2 border-white/5 rounded-[2.5rem] py-8 pl-24 pr-10 text-xl font-bold italic tracking-tight outline-none focus:border-aurora-cyan/30 focus:bg-white/10 transition-all placeholder:text-white/10 disabled:opacity-50"
                                     />
@@ -189,7 +202,7 @@ export default function AnalyzePage() {
                                 <div className="grid grid-cols-2 gap-8">
                                     <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 flex flex-col gap-4 italic text-sm text-white/30 font-medium">
                                         <div className="flex items-center gap-2 text-aurora-cyan text-xs font-black uppercase not-italic"><AlertCircle size={16} /> Supported Platforms</div>
-                                        Instagram Reels, YouTube Shorts, TikTok videos. Enter the full URL to begin analysis.
+                                        Instagram Reels, YouTube videos & Shorts, TikTok videos. Enter the full URL to begin analysis.
                                     </div>
                                     <div className="aspect-video rounded-[2rem] bg-[#080808] border border-white/5 flex items-center justify-center relative group overflow-hidden">
                                         <div className="absolute inset-0 bg-aurora-cyan/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
