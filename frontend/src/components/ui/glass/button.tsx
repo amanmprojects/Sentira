@@ -7,7 +7,7 @@ import type { GlassCustomization } from "@/lib/glass-utils"
 import { hoverEffects, type HoverEffect } from "@/lib/hover-effects"
 
 export interface ButtonProps
-  extends Omit<React.ComponentProps<typeof BaseButton>, "glass"> {
+  extends React.ComponentProps<typeof BaseButton> {
   effect?: HoverEffect
   glass?: GlassCustomization
 }
@@ -32,12 +32,11 @@ export interface ButtonProps
 export const Button = React.forwardRef<
   HTMLButtonElement,
   ButtonProps
->(({ className, effect = "glow", variant = "glass", glass, ...props }, ref) => {
+>(({ className, effect = "glow", variant = "default", glass, ...props }, ref) => {
   return (
     <BaseButton
       ref={ref}
       variant={variant}
-      glass={glass}
       className={cn(
         "relative overflow-hidden",
         hoverEffects({ hover: effect }),
