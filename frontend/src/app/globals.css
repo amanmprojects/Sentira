@@ -19,7 +19,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-inter), sans-serif;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* Cyber Reflection / Glassmorphism */
@@ -124,21 +124,11 @@ body {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 0px;
 }
 
-::-webkit-scrollbar-track {
-  background: #050505;
-}
 
-::-webkit-scrollbar-thumb {
-  background: #222;
-  border-radius: 10px;
-}
 
-::-webkit-scrollbar-thumb:hover {
-  background: #00f2fe;
-}
 
 /* Hide Scrollbar */
 .scrollbar-none {

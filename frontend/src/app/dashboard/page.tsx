@@ -19,7 +19,7 @@ import {
 import { useAnalysis, InputModality } from "@/context/AnalysisContext";
 
 const MODALITY_OPTIONS: { id: InputModality; label: string; icon: React.ReactNode; description: string }[] = [
-    { id: "video", label: "Video", icon: <Video size={20} />, description: "Instagram URL or upload" },
+    { id: "video", label: "Video", icon: <Video size={20} />, description: "Instagram Reel & YT Short URL or upload" },
     { id: "audio", label: "Audio", icon: <Mic size={20} />, description: "Audio file upload" },
     { id: "text", label: "Text", icon: <FileText size={20} />, description: "Paste or type content" },
 ];
@@ -136,12 +136,17 @@ export default function Dashboard() {
                                             {option.description}
                                         </span>
                                     </div>
-                                    {isActive && (
-                                        <motion.div
-                                            layoutId="modality-indicator"
-                                            className="w-full h-1 bg-aurora-cyan rounded-full mt-3"
-                                        />
-                                    )}
+                                    <AnimatePresence>
+                                        {isActive && (
+                                            <motion.div
+                                                initial={{ opacity: 0, scaleX: 0 }}
+                                                animate={{ opacity: 1, scaleX: 1 }}
+                                                exit={{ opacity: 0, scaleX: 0 }}
+                                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                                className="w-full h-1 bg-aurora-cyan rounded-full mt-3"
+                                            />
+                                        )}
+                                    </AnimatePresence>
                                 </motion.button>
                             );
                         })}
@@ -278,7 +283,7 @@ function VideoInput({
                         type="url"
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        placeholder="Paste Instagram Reel URL here..."
+                        placeholder="Paste Instagram Reel URL or Youtube Short URL here..."
                         className="w-full px-14 py-5 rounded-2xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:border-aurora-cyan/50 focus:bg-white/10 transition-all font-medium"
                     />
                     {value && (
@@ -430,30 +435,66 @@ function ActionCard({
         <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
-            whileHover={{ y: -5, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            transition={{ 
+                delay: 0.3 + index * 0.1,
+                duration: 0.5,
+                ease: [0.22, 1, 0.36, 1]
+            }}
+            whileHover={{ 
+                y: -8, 
+                scale: 1.02,
+                transition: { 
+                    duration: 0.3,
+                    ease: [0.22, 1, 0.36, 1]
+                }
+            }}
+            whileTap={{ 
+                scale: 0.98,
+                transition: { 
+                    duration: 0.1,
+                    ease: "easeOut"
+                }
+            }}
             onClick={onClick}
             disabled={!isInputValid}
-            className={`group relative p-8 rounded-[2rem] cyber-glass border border-white/5 text-left transition-all duration-300 ${
+            className={`group relative p-8 rounded-[2rem] cyber-glass border border-white/5 text-left transition-all duration-500 ease-out ${
                 colors.bg
             } ${colors.border} ${colors.glow} ${
                 !isInputValid ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
             }`}
         >
-            <div
-                className={`p-4 rounded-2xl bg-white/5 inline-block mb-4 group-hover:bg-white/10 transition-colors`}
+            <motion.div
+                className={`p-4 rounded-2xl bg-white/5 inline-block mb-4 transition-all duration-300 ease-out`}
+                whileHover={{ 
+                    scale: 1.1,
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    transition: { duration: 0.3, ease: "easeOut" }
+                }}
             >
                 <div className={colors.icon}>{card.icon}</div>
-            </div>
-            <h3 className="text-base font-black uppercase tracking-tight mb-2">
+            </motion.div>
+            <motion.h3 
+                className="text-base font-black uppercase tracking-tight mb-2"
+                initial={{ opacity: 0.9 }}
+                whileHover={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+            >
                 {card.title}
-            </h3>
-            <p className="text-white/40 text-xs leading-relaxed">{card.description}</p>
-            <ArrowRight
-                className={`absolute bottom-6 right-6 ${colors.icon} opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1`}
-                size={18}
-            />
+            </motion.h3>
+            <p className="text-white/40 text-xs leading-relaxed transition-colors duration-300 group-hover:text-white/60">
+                {card.description}
+            </p>
+            <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                whileHover={{ opacity: 1, x: 0 }}
+                transition={{ 
+                    duration: 0.3,
+                    ease: [0.22, 1, 0.36, 1]
+                }}
+                className={`absolute bottom-6 right-6 ${colors.icon}`}
+            >
+                <ArrowRight size={18} />
+            </motion.div>
         </motion.button>
     );
 }
