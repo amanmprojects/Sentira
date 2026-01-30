@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes import video_router, root_router
+from routes import video_router, root_router, videos_router
 
 app = FastAPI(title="Social Media Video Analysis API")
 
@@ -15,8 +15,10 @@ app.add_middleware(
 
 app.include_router(root_router)
 app.include_router(video_router)
+app.include_router(videos_router)
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

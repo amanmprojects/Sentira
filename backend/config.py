@@ -17,3 +17,7 @@ client = genai.Client(api_key=api_key)
 
 # Instagram downloader service base URL
 DOWNLOADER_BASE_URL = os.getenv("DOWNLOADER_BASE_URL", "http://localhost:3333")
+
+# Video storage directory for serving videos to frontend
+VIDEOS_DIR = Path(__file__).parent.parent / "videos"
+VIDEOS_DIR.mkdir(exist_ok=True)

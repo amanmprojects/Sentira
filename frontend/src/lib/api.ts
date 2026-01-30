@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // ==================== Type Definitions ====================
 
@@ -49,6 +49,40 @@ export interface EnhancedReelAnalysis {
     overall_truth_score?: number;
 }
 
+export type Emotion = "Anger" | "Disgust" | "Horror" | "Humor" | "Sadness" | "Surprise";
+
+export interface EmotionSegment {
+    start: number;
+    end: number;
+    emotion: Emotion;
+    intensity: number;
+}
+
+export interface CharacterEmotionAnalysis {
+    id: string;
+    name: string;
+    dominantEmotion: Emotion;
+    volatility: "Low" | "Medium" | "High";
+    screenTime: number;
+}
+
+export interface SentimentAnalysisResponse {
+    emotion_timeline: EmotionSegment[];
+    emotion_seismograph: Record<Emotion, number[]>;
+    character_emotions: CharacterEmotionAnalysis[];
+    global_category: string;
+    confidence: number;
+    transcript_segments: Array<{
+        id: number;
+        start: number;
+        end: number;
+        text: string;
+        emotion: Emotion;
+    }>;
+    duration: number;
+    video_url?: string;
+}
+
 export interface VideoAnalysis {
     summary: string;
 }
@@ -64,7 +98,7 @@ export interface ApiError {
  */
 export async function analyzeReel(
     postUrl: string,
-    enableFactCheck: boolean = true
+    enableFactCheck: boolean = false
 ): Promise<EnhancedReelAnalysis> {
     const response = await fetch(
         `${API_BASE_URL}/analyze-video/reel?enable_fact_check=${enableFactCheck}`,
@@ -85,12 +119,9 @@ export async function analyzeReel(
     return response.json();
 }
 
-/**
- * Analyze a YouTube video by URL
- */
 export async function analyzeYouTube(
     videoUrl: string,
-    enableFactCheck: boolean = true
+    enableFactCheck: boolean = false
 ): Promise<EnhancedReelAnalysis> {
     const response = await fetch(
         `${API_BASE_URL}/analyze-video/youtube?enable_fact_check=${enableFactCheck}`,
@@ -116,7 +147,7 @@ export async function analyzeYouTube(
  */
 export async function analyzeVideoUrl(
     url: string,
-    enableFactCheck: boolean = true
+    enableFactCheck: boolean = false
 ): Promise<{ data: EnhancedReelAnalysis; source: VideoSourceType }> {
     const source = detectVideoSource(url);
 
@@ -179,4 +210,24 @@ export async function checkApiHealth(): Promise<boolean> {
     } catch {
         return false;
     }
+}
+
+/**
+ * Analyze sentiment/emotions for a video URL (Instagram or YouTube)
+ */
+export async function analyzeSentiment(
+    videoUrl: string
+): Promise<SentimentAnalysisResponse> {
+    const response = await fetch(`${API_BASE_URL}/analyze-video/sentiment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_url: videoUrl }),
+    });
+
+    if (!response.ok) {
+        const error: ApiError = await response.json();
+        throw new Error(error.detail || 'Failed to analyze sentiment');
+    }
+
+    return response.json();
 }
