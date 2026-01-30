@@ -18,6 +18,8 @@ export const metadata: Metadata = {
     description: "Next-generation video analysis platform using Gemini to detect sentiment, bias, and manipulation patterns.",
 };
 
+import { AnalysisProvider } from "@/context/AnalysisContext";
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -28,9 +30,11 @@ export default function RootLayout({
             <body
                 className={`${inter.variable} ${spaceGrotesk.variable} antialiased selection:bg-brand-primary/30 min-h-screen bg-[#020617]`}
             >
-                <MainWrapper>
-                    {children}
-                </MainWrapper>
+                <AnalysisProvider>
+                    <MainWrapper>
+                        {children}
+                    </MainWrapper>
+                </AnalysisProvider>
             </body>
         </html>
     );

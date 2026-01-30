@@ -5,21 +5,22 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Plus,
-    LayoutDashboard,
-    Video,
+    Activity,
+    ShieldCheck,
     Hash,
     FileText,
-    History,
+    Settings,
     Sparkles,
     ChevronRight
 } from "lucide-react";
 
 const NAV_ITEMS = [
-    { icon: <LayoutDashboard size={20} />, label: "Pulse", href: "/dashboard" },
-    { icon: <Video size={20} />, label: "Scanner", href: "/analyze" },
-    { icon: <Hash size={20} />, label: "Topics", href: "/topic" },
+    { icon: <Activity size={20} />, label: "Sentiment Analysis", href: "/sentiment-analysis" },
+    { icon: <ShieldCheck size={20} />, label: "Detecting Bias", href: "/detecting-bias" },
+    { icon: <Hash size={20} />, label: "Trend Analysis", href: "/trend-analysis" },
+    { icon: <Plus size={20} />, label: "Browse", href: "/browse" },
     { icon: <FileText size={20} />, label: "Reports", href: "/reports" },
-    { icon: <History size={20} />, label: "Archive", href: "/history" },
+    { icon: <Settings size={20} />, label: "Settings", href: "/settings" },
 ];
 
 export default function Sidebar() {
@@ -38,7 +39,7 @@ export default function Sidebar() {
                     </div>
                 </div>
                 <span className="text-xl font-black tracking-tighter uppercase whitespace-nowrap">
-                    Senti<span className="aurora-text">Wave</span>
+                    Senti<span className="aurora-text">ra</span>
                 </span>
             </div>
 
@@ -52,8 +53,8 @@ export default function Sidebar() {
                                 whileHover={{ x: 5 }}
                                 whileTap={{ scale: 0.98 }}
                                 className={`relative flex items-center group px-4 py-4 rounded-2xl transition-all duration-300 ${isActive
-                                        ? "text-white"
-                                        : "text-white/40 hover:text-white/80"
+                                    ? "text-white"
+                                    : "text-white/40 hover:text-white/80"
                                     }`}
                             >
                                 {isActive && (

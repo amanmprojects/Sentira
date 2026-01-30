@@ -1,145 +1,249 @@
 "use client";
 
-import Link from "next/link";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight,
-  Zap,
-  ShieldCheck,
   Activity,
-  Eye,
-  Binary,
-  Cpu,
-  Globe
+  ArrowRight,
+  FileText,
+  Headphones,
+  Link as LinkIcon,
+  ShieldCheck,
+  Sparkles,
+  Type,
+  Upload,
+  Video
 } from "lucide-react";
-import { useRef } from "react";
-import { BorderBeam } from "@/components/ui/border-beam";
-import BeamGridBackground from "@/components/ui/beam-grid-background";
+import { useRouter } from "next/navigation";
+import { BeamGridBackground } from "@/components/ui/beam-grid-background";
+import { useAnalysis } from "@/context/AnalysisContext";
 
 export default function Home() {
-  const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"]
-  });
-
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const {
+    modality,
+    setModality,
+    text,
+    setText,
+    setAudioFile,
+    setVideoFile,
+    videoUrl,
+    setVideoUrl
+  } = useAnalysis();
+  const router = useRouter();
 
   return (
-    <div ref={containerRef} className="relative min-h-screen bg-aurora-deep text-white selection:bg-aurora-cyan/30">
+    <div className="relative min-h-screen bg-[#050505] text-white p-6 md:p-12 overflow-hidden">
       <BeamGridBackground
         gridSize={50}
-        beamColor="rgba(0, 242, 254, 0.6)"
-        darkBeamColor="rgba(0, 242, 254, 0.8)"
-        beamCount={10}
-        extraBeamCount={4}
-        beamSpeed={0.08}
-        beamThickness={2}
-        glowIntensity={40}
-        fadeIntensity={30}
+        beamColor="rgba(0, 242, 254, 0.4)"
+        darkBeamColor="rgba(0, 242, 254, 0.6)"
+        beamCount={8}
+        extraBeamCount={3}
+        beamSpeed={0.06}
+        beamThickness={1.5}
+        glowIntensity={25}
+        fadeIntensity={20}
       />
-      <div className="mesh-bg opacity-50"></div>
 
-      {/* Floating Elements */}
-      <div className="absolute top-20 left-10 w-32 h-32 bg-aurora-cyan/20 blur-[80px] rounded-full animate-float"></div>
-      <div className="absolute top-[40%] right-20 w-48 h-48 bg-aurora-rose/20 blur-[100px] rounded-full animate-float" style={{ animationDelay: '2s' }}></div>
-
-      {/* Navbar */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-h-20 max-w-7xl rounded-full z-50 px-8 py-6 flex justify-between items-center bg-white/1 backdrop-blur-xs border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]  transition-all duration-300">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 cyber-glass rounded-xl flex items-center justify-center border border-white/10 group">
-            <Binary className="text-aurora-cyan group-hover:rotate-12 transition-transform" size={24} />
+      <div className="max-w-6xl mx-auto space-y-16 relative z-10">
+        {/* Header */}
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-aurora-cyan uppercase font-black tracking-[0.4em] text-[10px]">Command Center</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-aurora-cyan shadow-[0_0_8px_#00f2fe]"></div>
           </div>
-          <span className="text-2xl font-black tracking-tighter uppercase">
-            Senti<span className="aurora-text">Wave</span>
-          </span>
-        </div>
-        <div className="hidden md:flex gap-10 items-center text-xs font-black uppercase tracking-widest text-white/50">
-          <Link href="#tech" className="hover:text-aurora-cyan transition-colors">Technology</Link>
-          <Link href="#features" className="hover:text-aurora-rose transition-colors">Protocol</Link>
-          <Link href="/dashboard" className="">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 cyber-glass border border-white/10 text-white rounded-full flex items-center gap-2 hover:border-aurora-cyan/50 hover:shadow-[0_0_20px_rgba(0,242,254,0.2)] transition-all"
+          <h1 className="text-6xl md:text-7xl font-black uppercase tracking-tighter">
+            Inbound <span className="aurora-text">Pulse</span>
+          </h1>
+        </motion.header>
+
+        {/* Multimodal Input Section */}
+        <div className="grid lg:grid-cols-5 gap-10">
+          <div className="lg:col-span-3 space-y-10">
+            {/* 1. Multimodal Input Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              className="p-8 rounded-[2.5rem] cyber-glass border border-white/5 space-y-8"
             >
-              Enterprise Portal <ArrowRight size={16} />
-            </motion.button>
-          </Link>
-        </div>
-      </nav>
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-black uppercase tracking-widest flex items-center gap-3">
+                  <Sparkles className="text-aurora-cyan" size={20} /> Select Modality
+                </h2>
+              </div>
 
-      <main className="relative z-10 pt-40">
-        {/* Hero Section */}
-        <section className="px-8 pb-32 flex flex-col items-center text-center m-5">
+              <div className="flex flex-wrap gap-4">
+                <ModalityTab
+                  active={modality === "text"}
+                  onClick={() => setModality("text")}
+                  icon={<Type size={20} />}
+                  label="Text"
+                />
+                <ModalityTab
+                  active={modality === "audio"}
+                  onClick={() => setModality("audio")}
+                  icon={<Headphones size={20} />}
+                  label="Audio"
+                />
+                <ModalityTab
+                  active={modality === "video"}
+                  onClick={() => setModality("video")}
+                  icon={<Video size={20} />}
+                  label="Video"
+                />
+              </div>
 
+              {/* 2. Input Area */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={modality}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="min-h-[240px] flex flex-col"
+                >
+                  {modality === "text" && (
+                    <textarea
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder="Enter text content for analysis..."
+                      className="flex-1 w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-lg focus:outline-none focus:border-aurora-cyan/50 focus:ring-1 focus:ring-aurora-cyan/20 transition-all resize-none placeholder:text-white/20"
+                    />
+                  )}
 
-          <motion.h1
-            style={{ y, opacity }}
-            className="text-5xl md:text-[8rem] font-black leading-[0.85] tracking-tighter mb-10 uppercase"
-          >
-            Decoding
-            <span className="aurora-text"> Sentira</span>
-          </motion.h1>
+                  {modality === "audio" && (
+                    <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-3xl group hover:border-aurora-cyan/30 transition-all cursor-pointer p-8">
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        className="hidden"
+                        id="audio-upload"
+                        onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                      />
+                      <label htmlFor="audio-upload" className="flex flex-col items-center gap-4 cursor-pointer">
+                        <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 group-hover:shadow-[0_0_30px_rgba(0,242,254,0.1)] transition-all">
+                          <Upload size={32} className="text-white/40 group-hover:text-aurora-cyan" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-black uppercase tracking-tight">Upload Audio Stream</p>
+                          <p className="text-sm text-white/30 font-medium">MP3, WAV, or AAC formats supported</p>
+                        </div>
+                      </label>
+                    </div>
+                  )}
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 1 }}
-            className="text-lg md:text-2xl text-white/40 max-w-4xl font-medium leading-relaxed mb-16 px-4"
-          >
-            The next-generation multimodal framework for social media bias detection,
-            driven by state-of-the-art AI temporal reasoning.
-          </motion.p>
+                  {modality === "video" && (
+                    <div className="space-y-6">
+                      <div className="relative group">
+                        <LinkIcon className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-aurora-cyan transition-colors" size={20} />
+                        <input
+                          type="text"
+                          value={videoUrl}
+                          onChange={(e) => setVideoUrl(e.target.value)}
+                          placeholder="Input social media URL (Instagram, Reels, etc.)"
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl py-6 pl-16 pr-6 text-lg focus:outline-none focus:border-aurora-cyan/50 transition-all placeholder:text-white/20"
+                        />
+                      </div>
+                      <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-3xl group hover:border-aurora-rose/30 transition-all cursor-pointer p-8 min-h-[140px]">
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          id="video-upload"
+                          onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                        />
+                        <label htmlFor="video-upload" className="flex items-center gap-4 cursor-pointer">
+                          <Upload size={20} className="text-white/40 group-hover:text-aurora-rose" />
+                          <span className="text-sm font-black uppercase tracking-widest text-white/40 group-hover:text-white">Or Upload MP4 File</span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="flex flex-col sm:flex-row gap-8 items-center"
-          >
-            <Link href="/dashboard" className="relative group">
-              <div className="absolute -inset-1 bg-linear-to-r from-aurora-cyan via-aurora-blue to-aurora-rose rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
-              <button className="relative px-12 py-6 bg-black text-white text-xl font-black rounded-xl uppercase tracking-widest flex items-center gap-4 transition-transform hover:scale-[1.02]">
-                Launch System <Zap size={24} className="fill-white" />
-              </button>
-            </Link>
-            <button className="px-10 py-5 cyber-glass border border-white/10 text-white font-bold rounded-xl uppercase tracking-widest hover:bg-white/5 transition-all">
-              Documentation
-            </button>
-          </motion.div>
-        </section>
-
-
-
-        {/* Technical Features Grid */}
-        {/* <section id="tech" className="px-8 max-w-7xl mx-auto py-32">
-          <div className="grid md:grid-cols-4 gap-8">
-            <TechCard
-              icon={<ShieldCheck className="text-aurora-cyan" />}
-              title="Bias Protocol"
-              desc="Detection of cherry-picking information with timestamped evidence."
+          {/* 3. Action Cards Section */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            <ActionCard
+              title="Sentiment Analysis"
+              description="Deep emotional flux and tonal recognition engine."
+              icon={<Activity size={24} className="text-aurora-cyan" />}
+              color="cyan"
+              onClick={() => router.push("/sentiment-analysis")}
             />
-            <TechCard
-              icon={<Activity className="text-aurora-rose" />}
-              title="Temporal Flow"
-              desc="Deep analysis of emotional shifts throughout video progression."
+            <ActionCard
+              title="Detecting Bias"
+              description="Identify manipulative framing and cherry-picked facts."
+              icon={<ShieldCheck size={24} className="text-aurora-rose" />}
+              color="rose"
+              onClick={() => router.push("/detecting-bias")}
             />
-            <TechCard
-              icon={<Eye className="text-aurora-blue" />}
-              title="Visual Logic"
-              desc="Decoding micro-expressions and manipulative framing patterns."
-            />
-            <TechCard
-              icon={<Globe className="text-white" />}
-              title="Hashtag Pulse"
-              desc="Comparative source analysis across global social ecosystems."
+            <ActionCard
+              title="Fact Checking"
+              description="Real-time verification against global knowledge bases."
+              icon={<FileText size={24} className="text-aurora-blue" />}
+              color="blue"
+              onClick={() => router.push("/reports")}
             />
           </div>
-        </section> */}
-      </main>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function ModalityTab({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-8 py-4 rounded-2xl flex items-center gap-3 font-black uppercase tracking-widest transition-all ${active
+        ? "bg-white/10 border border-white/20 text-white shadow-[0_0_20px_rgba(255,255,255,0.05)]"
+        : "text-white/30 hover:text-white/60 hover:bg-white/5 border border-transparent"
+        }`}
+    >
+      <div className={active ? "text-aurora-cyan" : ""}>{icon}</div>
+      <span className="text-sm">{label}</span>
+    </button>
+  );
+}
+
+function ActionCard({ title, description, icon, color, onClick }: { title: string, description: string, icon: React.ReactNode, color: 'cyan' | 'rose' | 'blue', onClick: () => void }) {
+  const colorStyles = {
+    cyan: "hover:border-aurora-cyan group-hover:shadow-[0_0_25px_rgba(0,242,254,0.1)]",
+    rose: "hover:border-aurora-rose group-hover:shadow-[0_0_25px_rgba(255,0,128,0.1)]",
+    blue: "hover:border-aurora-blue group-hover:shadow-[0_0_25px_rgba(79,172,254,0.1)]",
+  };
+
+  return (
+    <motion.button
+      whileHover={{ x: 10, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`group relative p-8 rounded-[2.5rem] cyber-glass border border-white/5 text-left transition-all duration-500 overflow-hidden ${colorStyles[color]}`}
+    >
+      <div className="absolute top-0 right-0 p-8 transform translate-x-4 -translate-y-4 opacity-5 group-hover:opacity-10 group-hover:translate-x-0 group-hover:translate-y-0 transition-all duration-700 scale-[3]">
+        {icon}
+      </div>
+
+      <div className="relative z-10 space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+          {icon}
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
+            {title}
+            <ArrowRight size={16} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+          </h3>
+          <p className="text-sm text-white/40 font-medium leading-relaxed">{description}</p>
+        </div>
+      </div>
+    </motion.button>
   );
 }
 
