@@ -14,7 +14,7 @@ import {
   Video
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { BeamGridBackground } from "@/components/ui/beam-grid-background";
+import BeamGridBackground from "@/components/ui/beam-grid-background";
 import { useAnalysis } from "@/context/AnalysisContext";
 
 export default function Home() {
