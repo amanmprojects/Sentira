@@ -265,7 +265,7 @@ const BeamGridBackground: React.FC<BeamGridBackgroundProps> = ({
             <div
                 className="pointer-events-none absolute inset-0"
                 style={{
-                    background: `radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.9) 100%)`,
+                    background: `radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%)`,
                 }}
             />
 

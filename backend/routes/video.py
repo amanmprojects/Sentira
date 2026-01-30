@@ -60,7 +60,7 @@ class ReelAnalysis(BaseModel):
     )
     possible_issues: list[str] = Field(
         default_factory=list,
-        description="List of potential content violations or sensitive topics detected (e.g., racism, homophobia, misogyny, casteism, islamophobia, hinduphobia, violence, hate speech, misinformation). Empty if none detected."
+        description="List of potential content violations or sensitive topics detected (e.g., racism, homophobia, misogyny, casteism, islamophobia, hinduphobia, violence, hate speech). Do NOT include misinformation - that is handled by the fact-checker. Empty if none detected."
     )
     transcript: Optional[str] = Field(
         default=None,
@@ -86,7 +86,7 @@ class EnhancedReelAnalysis(BaseModel):
     )
     possible_issues: list[str] = Field(
         default_factory=list,
-        description="List of potential content violations or sensitive topics detected (e.g., racism, homophobia, misogyny, casteism, islamophobia, hinduphobia, violence, hate speech, misinformation). Empty if none detected."
+        description="List of potential content violations or sensitive topics detected (e.g., racism, homophobia, misogyny, casteism, islamophobia, hinduphobia, violence, hate speech). Do NOT include misinformation - that is handled by the fact-checker. Empty if none detected."
     )
     transcript: Optional[str] = Field(
         default=None,
@@ -209,8 +209,9 @@ You must provide:
 3. **commentary_summary**: A thorough 8-10 sentence plot explanation. Describe the full narrative arc: what happens at the start, the key events or actions, any twist/punchline, and how it ends. Include dialogue context and on-screen text. Think of it as explaining the video's story to someone who hasn't seen it.
 4. **possible_issues**: List any potential content violations or sensitive topics such as:
    - racism, homophobia, misogyny, casteism, islamophobia, hinduphobia
-   - violence, hate speech, misinformation, harassment
+   - violence, hate speech, harassment
    - Leave empty if no issues detected.
+   - IMPORTANT: Do NOT include misinformation claims here - misinformation is handled by a separate fact-checking system with real-time search capabilities.
 5. **transcript**: Transcribe all speech/audio in the video. Include speaker labels if multiple speakers.
 6. **suggestions**: Any observations, context needed, fact-check recommendations, or content warnings.
 
@@ -341,12 +342,20 @@ async def analyze_reel(request: ReelAnalysisRequest, enable_fact_check: bool = T
                 )
                 overall_truth_score = fact_check_report.overall_truth_score
 
+        # Filter out misinformation-related issues since fact-checker handles those
+        # This is a safety net in case the model still includes misinformation flags
+        misinformation_keywords = ['misinformation', 'false claim', 'falsely claim', 'fake news', 'misleading claim']
+        filtered_issues = [
+            issue for issue in analysis.possible_issues
+            if not any(keyword in issue.lower() for keyword in misinformation_keywords)
+        ]
+
         # Return enhanced analysis
         return EnhancedReelAnalysis(
             main_summary=analysis.main_summary,
             characters=analysis.characters,
             commentary_summary=analysis.commentary_summary,
-            possible_issues=analysis.possible_issues,
+            possible_issues=filtered_issues,
             transcript=analysis.transcript,
             suggestions=analysis.suggestions,
             fact_check_report=fact_check_report,

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useRef } from "react";
 import { BorderBeam } from "@/components/ui/border-beam";
+import BeamGridBackground from "@/components/ui/beam-grid-background";
 
 export default function Home() {
   const containerRef = useRef(null);
@@ -27,6 +28,17 @@ export default function Home() {
 
   return (
     <div ref={containerRef} className="relative min-h-screen bg-aurora-deep text-white selection:bg-aurora-cyan/30">
+      <BeamGridBackground
+        gridSize={50}
+        beamColor="rgba(0, 242, 254, 0.6)"
+        darkBeamColor="rgba(0, 242, 254, 0.8)"
+        beamCount={10}
+        extraBeamCount={4}
+        beamSpeed={0.08}
+        beamThickness={2}
+        glowIntensity={40}
+        fadeIntensity={30}
+      />
       <div className="mesh-bg opacity-50"></div>
 
       {/* Floating Elements */}
@@ -99,33 +111,7 @@ export default function Home() {
           </motion.div>
         </section>
 
-        {/* Real-time Visualization Mockup */}
-        <section className="px-8 max-w-7xl mx-auto mb-48">
-          <motion.div
-            initial={{ opacity: 0, y: 100 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative rounded-[3rem] cyber-glass border border-white/10 p-2 overflow-hidden shadow-[0_0_100px_rgba(0,242,254,0.1)]"
-          >
-            <BorderBeam
-              size={120}
-              duration={8}
-              colorFrom="#00f2fe"
-              colorTo="#ff61d2"
-              beamBorderRadius={48}
-            />
-            <div className="aspect-[21/9] w-full bg-[#080808] rounded-[2.5rem] flex items-center justify-center relative overflow-hidden">
-              {/* System Nodes UI Mockup */}
-              <div className="absolute inset-0 opacity-10 pointer-events-none">
-                <div className="w-full h-full" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-              </div>
-              <div className="text-center z-10 space-y-4">
-                <Cpu className="text-aurora-cyan animate-pulse mx-auto" size={64} />
-                <p className="text-white/20 font-black tracking-[0.5em] uppercase text-xs">Awaiting Neural Link</p>
-              </div>
-            </div>
-          </motion.div>
-        </section>
+
 
         {/* Technical Features Grid */}
         <section id="tech" className="px-8 max-w-7xl mx-auto py-32">

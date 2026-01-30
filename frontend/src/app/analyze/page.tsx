@@ -18,6 +18,7 @@ import {
     XCircle
 } from "lucide-react";
 import { analyzeReel, type EnhancedReelAnalysis } from "@/lib/api";
+import BeamGridBackground from "@/components/ui/beam-grid-background";
 
 export default function AnalyzePage() {
     const router = useRouter();
@@ -91,11 +92,18 @@ export default function AnalyzePage() {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white p-6 pt-12 overflow-hidden selection:bg-aurora-cyan/30">
-            {/* Scanner Background Grid */}
-            <div className="fixed inset-0 z-0 pointer-events-none opacity-20">
-                <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '100px 100px' }}></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-aurora-cyan/10 blur-[150px] rounded-full"></div>
-            </div>
+            {/* Animated Beam Grid Background */}
+            <BeamGridBackground
+                gridSize={50}
+                beamColor="rgba(0, 242, 254, 0.6)"
+                darkBeamColor="rgba(0, 242, 254, 0.8)"
+                beamCount={10}
+                extraBeamCount={4}
+                beamSpeed={0.08}
+                beamThickness={2}
+                glowIntensity={40}
+                fadeIntensity={30}
+            />
 
             <div className="max-w-4xl mx-auto relative z-10 py-12">
                 <motion.div
