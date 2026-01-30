@@ -57,7 +57,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <main className="relative z-10 pt-48">
+      <main className="relative z-10 pt-0">
         {/* Hero Section */}
         <section className="px-8 pb-32 flex flex-col items-center text-center m-5">
           
