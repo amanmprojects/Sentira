@@ -20,7 +20,7 @@ export default function DetectingBiasPage() {
 
     return (
         <div className="min-h-screen p-6 pt-10 relative selection:bg-aurora-cyan/30 text-white">
-            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+            <div className="max-w-8xl mx-auto space-y-8 relative z-10">
 
                 {/* Header */}
                 <motion.header

@@ -158,35 +158,6 @@ export function RegionalHeatmapModal({ isOpen, onClose }: RegionalHeatmapModalPr
                                         </motion.div>
                                     ))}
                                 </div>
-
-                                {/* Hovered State Info */}
-                                <AnimatePresence mode="wait">
-                                    {hoveredRegion && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 5, scale: 0.98 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: -5, scale: 0.98 }}
-                                            transition={{ duration: 0.15, ease: "easeOut" }}
-                                            className="p-3 bg-gradient-to-br from-aurora-cyan/10 to-aurora-blue/5 border border-aurora-cyan/30 rounded-xl shadow-lg shadow-aurora-cyan/5"
-                                        >
-                                            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-aurora-cyan mb-1 flex items-center gap-1">
-                                                <div className="w-1 h-1 rounded-full bg-aurora-cyan animate-pulse" />
-                                                Selected State
-                                            </p>
-                                            <p className="text-base font-black text-white mb-0.5 leading-none">{hoveredRegion.name}</p>
-                                            <div className="flex items-baseline gap-1.5">
-                                                <p className={`text-2xl font-black tabular-nums leading-none ${
-                                                    hoveredRegion.bias >= 75 ? 'text-[#ff0080]' :
-                                                    hoveredRegion.bias >= 50 ? 'text-[#00f2fe]' :
-                                                    hoveredRegion.bias >= 30 ? 'text-[#4facfe]' : 'text-emerald-400'
-                                                }`}>
-                                                    {hoveredRegion.bias}%
-                                                </p>
-                                                <span className="text-[9px] text-white/40 font-medium uppercase tracking-wide">Bias</span>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
                             </div>
 
                             {/* Right Panel - Map */}
@@ -201,6 +172,35 @@ export function RegionalHeatmapModal({ isOpen, onClose }: RegionalHeatmapModalPr
                                             }
                                         }}
                                     />
+                                    
+                                    {/* Hovered State Info - Overlay on Map */}
+                                    <AnimatePresence mode="wait">
+                                        {hoveredRegion && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 5, scale: 0.98 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: -5, scale: 0.98 }}
+                                                transition={{ duration: 0.15, ease: "easeOut" }}
+                                                className="absolute top-3 left-3 p-3 bg-gradient-to-br from-aurora-cyan/10 to-aurora-blue/5 border border-aurora-cyan/30 rounded-xl shadow-lg shadow-aurora-cyan/5 backdrop-blur-xl"
+                                            >
+                                                <div className="text-[8px] font-black uppercase tracking-[0.2em] text-aurora-cyan mb-1 flex items-center gap-1">
+                                                    <div className="w-1 h-1 rounded-full bg-aurora-cyan animate-pulse" />
+                                                    Selected State
+                                                </div>
+                                                <p className="text-base font-black text-white mb-0.5 leading-none">{hoveredRegion.name}</p>
+                                                <div className="flex items-baseline gap-1.5">
+                                                    <p className={`text-2xl font-black tabular-nums leading-none ${
+                                                        hoveredRegion.bias >= 75 ? 'text-[#ff0080]' :
+                                                        hoveredRegion.bias >= 50 ? 'text-[#00f2fe]' :
+                                                        hoveredRegion.bias >= 30 ? 'text-[#4facfe]' : 'text-emerald-400'
+                                                    }`}>
+                                                        {hoveredRegion.bias}%
+                                                    </p>
+                                                    <span className="text-[9px] text-white/40 font-medium uppercase tracking-wide">Bias</span>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                     
                                     {/* Map Stats Overlay */}
                                     <div className="absolute bottom-3 left-3 right-3 flex justify-between gap-2">
