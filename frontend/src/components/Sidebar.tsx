@@ -2,34 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-    Plus,
+    LayoutDashboard,
     Activity,
-    ShieldCheck,
-    Hash,
+    Scale,
+    TrendingUp,
+    Compass,
     FileText,
     Settings,
-    Sparkles,
-    ChevronRight,
-    LayoutDashboard,
-    Video,
-    History
 } from "lucide-react";
 import { BorderBeam } from "./border-beam";
 import BrandIcon from "./BrandIcon";
 import { UserButton, SignOutButton } from "@clerk/nextjs";
 import { LogOut } from "lucide-react";
 
-// Use main's navigation items but add dashboard entries from sumitvp
 const NAV_ITEMS = [
-    { icon: <LayoutDashboard size={18} />, label: "Dashboard", href: "/dashboard" },
-    { icon: <Plus size={18} />, label: "Analyze", href: "/analyze" },
+    { icon: <LayoutDashboard size={18} />, label: "Pulse", href: "/dashboard" },
     { icon: <Activity size={18} />, label: "Sentiment Analysis", href: "/sentiment-analysis" },
-    { icon: <ShieldCheck size={18} />, label: "Detecting Bias", href: "/detecting-bias" },
-    { icon: <Hash size={18} />, label: "Trend Analysis", href: "/trend-analysis" },
+    { icon: <Scale size={18} />, label: "Detecting Bias", href: "/detecting-bias" },
+    { icon: <TrendingUp size={18} />, label: "Trend Analysis", href: "/trend-analysis" },
+    { icon: <Compass size={18} />, label: "Browse", href: "/browse" },
     { icon: <FileText size={18} />, label: "Reports", href: "/reports" },
-    { icon: <History size={18} />, label: "Archive", href: "/history" },
     { icon: <Settings size={18} />, label: "Settings", href: "/settings" },
 ];
 
@@ -45,16 +39,16 @@ export default function Sidebar() {
                 <BorderBeam size={250} duration={8} delay={0} colorFrom="#00f2fe" colorTo="#ff0080" />
             </div>
 
-            {/* Branding */}
-            <div className="flex items-center gap-3 py-6 mb-8 group relative z-10">
+            {/* Branding - Click to go to Pulse (Dashboard) */}
+            <Link href="/dashboard" className="flex items-center gap-3 py-6 mb-8 group relative z-10 hover:opacity-80 transition-opacity">
                 <BrandIcon size="md" />
                 <span className="text-xl font-black tracking-tighter uppercase">
                     Sen<span className="aurora-text">tira</span>
                 </span>
-            </div>
+            </Link>
 
             {/* Navigation */}
-            <nav className="flex-1 space-y-2 relative z-10 overflow-y-auto custom-scrollbar">
+            <nav className="flex-1 space-y-2 relative z-10 overflow-y-auto scrollbar-none">
                 {NAV_ITEMS.map((item) => {
                     const isActive = pathname === item.href;
                     return (
@@ -62,7 +56,7 @@ export default function Sidebar() {
                             <motion.div
                                 whileHover={{ x: 5 }}
                                 whileTap={{ scale: 0.98 }}
-                                className={`relative flex items-center group px-4 py-3 rounded-2xl transition-all duration-300 ${isActive
+                                className={`relative flex items-center group px-4 py-4 rounded-2xl transition-all duration-300 ${isActive
                                     ? "text-white bg-white/5"
                                     : "text-white/30 hover:text-white/60 hover:bg-white/5"
                                     }`}
@@ -87,10 +81,10 @@ export default function Sidebar() {
 
             {/* Status & User Section */}
             <div className="mt-auto space-y-4 pt-6 relative z-10">
-                <div className="p-5 rounded-[2rem] bg-white/5 border border-white/10 space-y-4 relative overflow-hidden group">
+                <div className="p-6 rounded-[2rem] bg-white/5 border border-white/10 space-y-4 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-aurora-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     <div className="flex items-center justify-between relative z-10">
-                        <span className="text-[10px] uppercase font-black tracking-widest text-white/20">Gemini Engine</span>
+                        <span className="text-[10px] uppercase font-black tracking-widest text-white/20">Neural Engine</span>
                         <div className="w-2 h-2 rounded-full bg-aurora-cyan animate-pulse shadow-[0_0_10px_#00f2fe]"></div>
                     </div>
                     <div className="space-y-1 relative z-10">

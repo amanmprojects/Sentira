@@ -1,24 +1,83 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { motion } from "framer-motion";
+import { Settings, User, Bell, Shield, Palette } from "lucide-react";
+
+const SETTINGS_SECTIONS = [
+    {
+        id: "profile",
+        title: "Profile",
+        description: "Manage your account information",
+        icon: <User size={20} />,
+    },
+    {
+        id: "notifications",
+        title: "Notifications",
+        description: "Configure alert preferences",
+        icon: <Bell size={20} />,
+    },
+    {
+        id: "privacy",
+        title: "Privacy & Security",
+        description: "Control your data and security settings",
+        icon: <Shield size={20} />,
+    },
+    {
+        id: "appearance",
+        title: "Appearance",
+        description: "Customize the interface",
+        icon: <Palette size={20} />,
+    },
+];
 
 export default function SettingsPage() {
     return (
-        <div className="min-h-screen bg-[#050505] text-white p-12">
-            <div className="max-w-4xl mx-auto space-y-8">
-                <header className="space-y-2">
-                    <div className="flex items-center gap-2 text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">
-                        <Settings size={14} /> System Config
+        <div className="min-h-screen bg-[#050505] text-white p-6 lg:p-10">
+            <div className="max-w-3xl mx-auto space-y-8">
+                {/* Page Header */}
+                <motion.header
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <div className="flex items-center gap-3 mb-2">
+                        <Settings className="text-aurora-cyan" size={24} />
+                        <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter">
+                            <span className="aurora-text">Settings</span>
+                        </h1>
                     </div>
-                    <h1 className="text-4xl font-black uppercase tracking-tighter">Control <span className="aurora-text">Center</span></h1>
-                </header>
+                    <p className="text-white/40 text-sm">
+                        User preferences and configuration
+                    </p>
+                </motion.header>
 
-                <div className="p-12 rounded-[3rem] cyber-glass border border-white/10 flex flex-col items-center justify-center min-h-[400px] text-center space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center">
-                        <Settings size={32} className="text-white/40" />
-                    </div>
-                    <h3 className="text-2xl font-black uppercase tracking-tight text-white/80">Application Settings</h3>
-                    <p className="text-white/40 max-w-sm">Manage API keys, model selection parameters, and UI preferences in this section.</p>
+                {/* Settings Sections */}
+                <div className="space-y-4">
+                    {SETTINGS_SECTIONS.map((section, index) => (
+                        <motion.div
+                            key={section.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 + index * 0.05 }}
+                            className="p-6 rounded-2xl cyber-glass border border-white/5 hover:border-white/10 transition-all cursor-pointer group"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-xl bg-white/5 text-white/50 group-hover:text-aurora-cyan group-hover:bg-aurora-cyan/10 transition-all">
+                                    {section.icon}
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-black uppercase tracking-tight text-sm">
+                                        {section.title}
+                                    </h3>
+                                    <p className="text-white/40 text-xs mt-0.5">
+                                        {section.description}
+                                    </p>
+                                </div>
+                                <div className="text-white/20 group-hover:text-white/40 transition-colors">
+                                    →
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
         </div>

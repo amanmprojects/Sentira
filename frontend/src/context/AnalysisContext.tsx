@@ -1,53 +1,69 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
-type Modality = "text" | "audio" | "video";
+export type InputModality = "video" | "audio" | "text";
+
+export interface AnalysisInput {
+    modality: InputModality;
+    content: string; // URL for video/audio, or text content
+    file?: File | null;
+}
 
 interface AnalysisContextType {
-    modality: Modality;
-    setModality: (m: Modality) => void;
-    text: string;
-    setText: (t: string) => void;
-    audioFile: File | null;
-    setAudioFile: (f: File | null) => void;
-    videoFile: File | null;
-    setVideoFile: (f: File | null) => void;
-    videoUrl: string;
-    setVideoUrl: (url: string) => void;
-    clearAll: () => void;
+    input: AnalysisInput;
+    setInput: (input: AnalysisInput) => void;
+    setModality: (modality: InputModality) => void;
+    setContent: (content: string) => void;
+    setFile: (file: File | null) => void;
+    clearInput: () => void;
+    isInputValid: boolean;
 }
+
+const defaultInput: AnalysisInput = {
+    modality: "video",
+    content: "",
+    file: null,
+};
 
 const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined);
 
-export function AnalysisProvider({ children }: { children: React.ReactNode }) {
-    const [modality, setModality] = useState<Modality>("text");
-    const [text, setText] = useState("");
-    const [audioFile, setAudioFile] = useState<File | null>(null);
-    const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [videoUrl, setVideoUrl] = useState("");
+export function AnalysisProvider({ children }: { children: ReactNode }) {
+    const [input, setInputState] = useState<AnalysisInput>(defaultInput);
 
-    const clearAll = () => {
-        setText("");
-        setAudioFile(null);
-        setVideoFile(null);
-        setVideoUrl("");
+    const setInput = (newInput: AnalysisInput) => {
+        setInputState(newInput);
     };
+
+    const setModality = (modality: InputModality) => {
+        setInputState((prev) => ({ ...prev, modality, content: "", file: null }));
+    };
+
+    const setContent = (content: string) => {
+        setInputState((prev) => ({ ...prev, content }));
+    };
+
+    const setFile = (file: File | null) => {
+        setInputState((prev) => ({ ...prev, file }));
+    };
+
+    const clearInput = () => {
+        setInputState(defaultInput);
+    };
+
+    const isInputValid = 
+        input.content.trim().length > 0 || input.file !== null;
 
     return (
         <AnalysisContext.Provider
             value={{
-                modality,
+                input,
+                setInput,
                 setModality,
-                text,
-                setText,
-                audioFile,
-                setAudioFile,
-                videoFile,
-                setVideoFile,
-                videoUrl,
-                setVideoUrl,
-                clearAll,
+                setContent,
+                setFile,
+                clearInput,
+                isInputValid,
             }}
         >
             {children}
