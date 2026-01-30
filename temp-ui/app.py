@@ -1,6 +1,18 @@
 import streamlit as st
 import requests
 import time
+from datetime import datetime
+
+# Import database functions
+from database import init_database, save_reel, get_recent_reels, check_url_exists, delete_reel, update_reel_name, invalidate_cache
+
+# Initialize database on app start
+try:
+    init_database()
+    db_connected = True
+except Exception as e:
+    db_connected = False
+    db_error = str(e)
 
 st.set_page_config(
     page_title="Reel Analysis",
@@ -8,10 +20,63 @@ st.set_page_config(
     layout="wide"
 )
 
+API_BASE_URL = "http://localhost:8000"
+
+# ==================== SIDEBAR: Recent Reels ====================
+with st.sidebar:
+    st.header("📚 Recent Reels")
+    
+    if not db_connected:
+        st.error(f"Database connection failed: {db_error}")
+    else:
+        # Refresh button
+        if st.button("🔄 Refresh", use_container_width=True):
+            st.rerun()
+        
+        st.divider()
+        
+        # Get recent reels
+        recent_reels = get_recent_reels(limit=20)
+        
+        if not recent_reels:
+            st.caption("No reels analyzed yet. Start by analyzing a reel!")
+        else:
+            for reel in recent_reels:
+                reel_id = reel['id']
+                reel_url = reel['url']
+                reel_name = reel['name'] or f"Reel #{reel_id}"
+                created_at = reel['created_at']
+                
+                # Format the timestamp
+                if isinstance(created_at, datetime):
+                    time_str = created_at.strftime("%b %d, %I:%M %p")
+                else:
+                    time_str = str(created_at)[:16]
+                
+                with st.container(border=True):
+                    # Display name and time
+                    st.markdown(f"**{reel_name}**")
+                    st.caption(f"🕒 {time_str}")
+                    
+                    # Action buttons
+                    col1, col2 = st.columns([1, 1])
+                    
+                    with col1:
+                        if st.button("📋 Load", key=f"load_{reel_id}", use_container_width=True):
+                            st.session_state['load_reel_url'] = reel_url
+                            st.rerun()
+                    
+                    with col2:
+                        if st.button("🗑️", key=f"del_{reel_id}", use_container_width=True):
+                            delete_reel(reel_id)
+                            st.rerun()
+    
+    st.divider()
+    st.caption("💡 Tip: Click 'Load' to use a previous reel URL")
+
+# ==================== MAIN CONTENT ====================
 st.title("Social Media Video Analysis Platform")
 st.markdown("AI-powered content analysis for Instagram Reels")
-
-API_BASE_URL = "http://localhost:8000"
 
 # Create tabs for different analysis modes
 tab1, tab2 = st.tabs(["📱 Analyze Reel URL", "📤 Upload Video"])
@@ -21,11 +86,35 @@ with tab1:
     st.subheader("Analyze Instagram Reel")
     st.markdown("Paste an Instagram reel URL to get detailed AI analysis")
     
-    reel_url = st.text_input(
-        "Instagram Reel URL",
-        placeholder="https://www.instagram.com/reel/...",
-        help="Paste the full Instagram reel URL"
-    )
+    # Initialize session state for inputs if not exists
+    if 'reel_url_input' not in st.session_state:
+        st.session_state.reel_url_input = ''
+    if 'reel_name_input' not in st.session_state:
+        st.session_state.reel_name_input = ''
+    
+    # Check if we should load a URL from sidebar (set by Load button)
+    if 'load_reel_url' in st.session_state:
+        st.session_state.reel_url_input = st.session_state.load_reel_url
+        del st.session_state['load_reel_url']
+    
+    # URL input and optional name
+    col_url, col_name = st.columns([3, 1])
+    
+    with col_url:
+        reel_url = st.text_input(
+            "Instagram Reel URL",
+            key="reel_url_input",
+            placeholder="https://www.instagram.com/reel/...",
+            help="Paste the full Instagram reel URL"
+        )
+    
+    with col_name:
+        reel_name = st.text_input(
+            "Name (optional)",
+            key="reel_name_input",
+            placeholder="e.g., Funny cat video",
+            help="Give this reel a memorable name"
+        )
     
     if st.button("Analyze Reel", disabled=not reel_url, type="primary", use_container_width=True, key="analyze_reel"):
         if reel_url:
@@ -56,6 +145,22 @@ with tab1:
                     status_container.success("✅ **Analysis complete!**")
                     progress_bar.progress(100)
                     time.sleep(0.5)
+                    
+                    # Save to database if connected
+                    if db_connected:
+                        try:
+                            # Check if URL already exists
+                            existing = check_url_exists(reel_url)
+                            if not existing:
+                                save_reel(reel_url, reel_name if reel_name else None)
+                                invalidate_cache()  # Clear cache so sidebar updates
+                                st.toast("📚 Reel saved to history!", icon="✅")
+                            elif reel_name and not existing.get('name'):
+                                # Update name if provided and not already set
+                                update_reel_name(existing['id'], reel_name)
+                                invalidate_cache()
+                        except Exception as db_err:
+                            st.warning(f"Could not save to history: {db_err}")
                     
                     # Clear status elements
                     status_container.empty()
