@@ -235,3 +235,26 @@ export async function analyzeSentiment(
 
     return response.json();
 }
+
+/**
+ * Analyze sentiment/emotions for an uploaded video file
+ */
+export async function analyzeSentimentUpload(
+    file: File
+): Promise<SentimentAnalysisResponse> {
+    const formData = new FormData();
+    formData.append('video', file);
+
+    const response = await fetch(`${API_BASE_URL}/analyze-video/sentiment/upload`, {
+        method: 'POST',
+        body: formData,
+        cache: 'no-store',
+    });
+
+    if (!response.ok) {
+        const error: ApiError = await response.json();
+        throw new Error(error.detail || 'Failed to analyze segment for upload');
+    }
+
+    return response.json();
+}

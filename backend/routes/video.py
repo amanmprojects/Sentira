@@ -240,53 +240,17 @@ async def analyze_youtube(request: YouTubeAnalysisRequest, enable_fact_check: bo
             except: pass
 
 
-@router.post("/sentiment")
-async def analyze_sentiment_url(request: ReelAnalysisRequest):
-    """Dedicated sentiment/emotion analysis endpoint."""
-
+async def _perform_full_sentiment_analysis(temp_file_path: str, video_duration: int, cache_key: str):
+    """Internal helper to run parallel Gemini analysis on a video file."""
     myfile = None
-    temp_file_path = None
-    video_duration = 30
-
     try:
-        is_youtube = "youtube.com" in request.post_url or "youtu.be" in request.post_url
-
-        if is_youtube:
-            downloader = get_youtube_downloader()
-            video_bytes, filename, metadata = downloader.download_video_bytes(request.post_url, max_quality="720p")
-            video_duration = metadata.get("length", 30)
-            temp_file_path = f"temp_youtube_{uuid.uuid4().hex}.mp4"
-            with open(temp_file_path, "wb") as f: f.write(video_bytes)
-        else:
-            async with httpx.AsyncClient(timeout=60.0) as http_client:
-                downloader_url = f"{DOWNLOADER_BASE_URL}/api/video"
-                response = await http_client.get(downloader_url, params={"postUrl": request.post_url, "enhanced": "true", "_t": str(time.time())})
-                video_data = response.json()
-                medias = video_data.get("data", {}).get("medias", [])
-                if not medias: raise HTTPException(status_code=400, detail="No video media found")
-
-                video_url = medias[0].get("url")
-                video_response = await http_client.get(video_url)
-                temp_file_path = f"temp_reel_{uuid.uuid4().hex}.mp4"
-                with open(temp_file_path, "wb") as f: f.write(video_response.content)
-
-                cap = cv2.VideoCapture(temp_file_path)
-                video_duration = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS))
-                cap.release()
-
         myfile = client.files.upload(file=temp_file_path)
         while myfile.state == "PROCESSING":
             await asyncio.sleep(1)
             myfile = client.files.get(name=myfile.name)
 
-        # Check Cache
-        cache = get_cache()
-        cached_result = cache.get(request.post_url)
-        if cached_result:
-            return cached_result
-
         if myfile.state != "ACTIVE":
-            raise HTTPException(status_code=500, detail=f"File processing failed: {myfile.state}")
+            raise HTTPException(status_code=500, detail=f"Gemini processing failed: {myfile.state}")
 
         async def analyze_temporal_emotions() -> TemporalEmotionAnalysis:
             temporal_prompt = build_temporal_analysis_prompt(video_duration)
@@ -333,9 +297,12 @@ async def analyze_sentiment_url(request: ReelAnalysisRequest):
             for i, seg in enumerate(sentiment_result.emotion_timeline)
         ]
 
-        url_hash = hashlib.md5(request.post_url.encode()).hexdigest()
+        # Use cache_key hash for video filename to keep it consistent for URLs
+        url_hash = hashlib.md5(cache_key.encode()).hexdigest()
         video_filename = f"video_{url_hash}.mp4"
         persistent_video_path = VIDEOS_DIR / video_filename
+        
+        # Save persistent copy for frontend serving
         if temp_file_path and os.path.exists(temp_file_path):
             try: shutil.copy2(temp_file_path, persistent_video_path)
             except Exception as e: print(f"Failed to save video: {e}")
@@ -353,16 +320,91 @@ async def analyze_sentiment_url(request: ReelAnalysisRequest):
         }
 
         # Save to Cache
-        cache.set(request.post_url, result)
-
+        get_cache().set(cache_key, result)
         return result
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to analyze sentiment: {str(e)}")
     finally:
         if myfile:
             try: client.files.delete(name=myfile.name)
             except: pass
+
+
+@router.post("/sentiment")
+async def analyze_sentiment_url(request: ReelAnalysisRequest):
+    """Dedicated sentiment/emotion analysis endpoint for URLs."""
+    # Check Cache first
+    cache = get_cache()
+    cached_result = cache.get(request.post_url)
+    if cached_result:
+        # Verify the video file actually exists
+        video_filename = cached_result.get("video_url", "").split("/")[-1]
+        if video_filename and (VIDEOS_DIR / video_filename).exists():
+            return cached_result
+        # If file missing, re-run analysis
+
+    temp_file_path = None
+    try:
+        is_youtube = "youtube.com" in request.post_url or "youtu.be" in request.post_url
+
+        if is_youtube:
+            downloader = get_youtube_downloader()
+            video_bytes, filename, metadata = downloader.download_video_bytes(request.post_url, max_quality="720p")
+            video_duration = metadata.get("length", 30)
+            temp_file_path = f"temp_youtube_{uuid.uuid4().hex}.mp4"
+            with open(temp_file_path, "wb") as f: f.write(video_bytes)
+        else:
+            async with httpx.AsyncClient(timeout=60.0) as http_client:
+                downloader_url = f"{DOWNLOADER_BASE_URL}/api/video"
+                response = await http_client.get(downloader_url, params={"postUrl": request.post_url, "enhanced": "true", "_t": str(time.time())})
+                video_data = response.json()
+                medias = video_data.get("data", {}).get("medias", [])
+                if not medias: raise HTTPException(status_code=400, detail="No video media found")
+
+                video_url = medias[0].get("url")
+                video_response = await http_client.get(video_url)
+                temp_file_path = f"temp_reel_{uuid.uuid4().hex}.mp4"
+                with open(temp_file_path, "wb") as f: f.write(video_response.content)
+
+                cap = cv2.VideoCapture(temp_file_path)
+                video_duration = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS)) if cap.get(cv2.CAP_PROP_FPS) > 0 else 30
+                cap.release()
+
+        return await _perform_full_sentiment_analysis(temp_file_path, video_duration, request.post_url)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to analyze sentiment: {str(e)}")
+    finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            try: os.remove(temp_file_path)
+            except: pass
+
+
+@router.post("/sentiment/upload")
+async def analyze_sentiment_upload(video: UploadFile = File(...)):
+    """Sentiment/emotion analysis for uploaded video files."""
+    if not video.filename.lower().endswith((".mp4", ".mov", ".webm", ".avi")):
+        raise HTTPException(status_code=400, detail="Invalid video file format")
+
+    temp_file_path = f"temp_upload_{uuid.uuid4().hex}_{video.filename}"
+    try:
+        contents = await video.read()
+        with open(temp_file_path, "wb") as f:
+            f.write(contents)
+
+        # Get video duration
+        cap = cv2.VideoCapture(temp_file_path)
+        video_duration = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS)) if cap.get(cv2.CAP_PROP_FPS) > 0 else 30
+        cap.release()
+
+        # Generate a semi-stable cache key for the file based on its name and size
+        # (This is better than nothing, but not as good as a content hash)
+        cache_key = f"upload_{video.filename}_{len(contents)}"
+        
+        return await _perform_full_sentiment_analysis(temp_file_path, video_duration, cache_key)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to analyze uploaded video: {str(e)}")
+    finally:
         if temp_file_path and os.path.exists(temp_file_path):
             try: os.remove(temp_file_path)
             except: pass

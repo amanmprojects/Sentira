@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useAnalysis } from "@/context/AnalysisContext";
-import { analyzeSentiment, type SentimentAnalysisResponse, type Emotion, API_BASE_URL } from "@/lib/api";
+import { analyzeSentiment, analyzeSentimentUpload, type SentimentAnalysisResponse, type Emotion, API_BASE_URL } from "@/lib/api";
 
 function SummaryBadge({ label, value, color }: { label: string, value: string, color: 'cyan' | 'blue' | 'rose' }) {
   const colors = {
@@ -279,7 +279,9 @@ export default function SentimentAnalysisPage() {
     try {
       setLoading(true);
       setError(null);
-      const result = await analyzeSentiment(input.content);
+      const result = input.file
+        ? await analyzeSentimentUpload(input.file)
+        : await analyzeSentiment(input.content);
       setData(result);
       setSentimentData(result);
     } catch (err) {
@@ -287,13 +289,13 @@ export default function SentimentAnalysisPage() {
     } finally {
       setLoading(false);
     }
-  }, [input.content, sentimentData, setSentimentData]);
+  }, [input.content, input.file, sentimentData, setSentimentData]);
 
   useEffect(() => {
-    if (isInputValid && input.content) {
+    if (isInputValid && (input.content || input.file)) {
       fetchAnalysis();
     }
-  }, [isInputValid, input.content, fetchAnalysis]);
+  }, [isInputValid, input.content, input.file, fetchAnalysis]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -334,12 +336,20 @@ export default function SentimentAnalysisPage() {
     return <NoInputState />;
   }
 
-  const emotionCounts = data.emotion_timeline.reduce((acc, seg) => {
+  const emotionTimeline = data.emotion_timeline || [];
+  const transcriptSegments = data.transcript_segments || [];
+  const characterEmotions = data.character_emotions || [];
+  const emotionSeismograph = data.emotion_seismograph || {};
+
+  const confidence = data.confidence ?? 0;
+  const globalCategory = data.global_category || "Unknown";
+
+  const emotionCounts = emotionTimeline.reduce((acc, seg) => {
     acc[seg.emotion] = (acc[seg.emotion] || 0) + seg.intensity;
     return acc;
   }, {} as Record<Emotion, number>);
 
-  const sortedEmotions = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1]);
+  const sortedEmotions = Object.entries(emotionCounts).sort((a, b) => (b[1] as number) - (a[1] as number));
   const primaryEmotion = sortedEmotions[0]?.[0] || "Unknown";
   const secondaryEmotion = sortedEmotions[1]?.[0] || "Unknown";
 
@@ -465,13 +475,13 @@ export default function SentimentAnalysisPage() {
                   <div>
                     <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Confidence Index</p>
                     <p className="text-xl font-black italic">
-                      {Math.round(data.confidence * 100)}%
+                      {Math.round(confidence * 100)}%
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Global Category</p>
                     <p className="text-sm font-black uppercase text-aurora-cyan">
-                      {data.global_category}
+                      {globalCategory}
                     </p>
                   </div>
                 </div>
@@ -485,7 +495,7 @@ export default function SentimentAnalysisPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 h-full overflow-y-auto pr-2 scrollbar-none pb-12">
                 {(["Anger", "Disgust", "Horror", "Humor", "Sadness", "Surprise"] as Emotion[]).map((emotion) => {
                   const emotionColor = emotion === "Anger" ? "rose" : emotion === "Humor" ? "cyan" : "blue";
-                  const isActive = data.emotion_timeline.some(
+                  const isActive = emotionTimeline.some(
                     seg => seg.emotion === emotion && currentTime >= seg.start && currentTime <= seg.end
                   );
                   return (
@@ -494,7 +504,7 @@ export default function SentimentAnalysisPage() {
                       label={emotion}
                       color={emotionColor}
                       active={isActive}
-                      data={data.emotion_seismograph[emotion] || []}
+                      data={emotionSeismograph[emotion] || []}
                       duration={duration}
                       currentTime={currentTime}
                     />
@@ -511,11 +521,11 @@ export default function SentimentAnalysisPage() {
                   <MessageSquare size={16} className="text-aurora-cyan" /> Logged Transcript
                 </h2>
                 <span className="text-[10px] font-black text-white/40 uppercase">
-                  {data.transcript_segments.length} segments
+                  {transcriptSegments.length} segments
                 </span>
               </div>
               <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-none">
-                {data.transcript_segments.map((seg) => (
+                {transcriptSegments.map((seg: any) => (
                   <div
                     key={seg.id}
                     onClick={() => setCurrentTime(seg.start)}
@@ -550,7 +560,7 @@ export default function SentimentAnalysisPage() {
                 Dominance Timeline
               </h2>
               <div className="relative h-20 w-full bg-white/5 rounded-xl overflow-hidden flex">
-                {data.emotion_timeline.map((seg, i) => {
+                {emotionTimeline.map((seg, i) => {
                   const width = ((seg.end - seg.start) / duration) * 100;
                   const color = getEmotionColorBg(seg.emotion);
 
@@ -579,7 +589,7 @@ export default function SentimentAnalysisPage() {
                 <User size={14} className="text-aurora-cyan" /> Facial Expression Map
               </h2>
               <div className="grid sm:grid-cols-2 gap-6">
-                {data.character_emotions.map(char => (
+                {characterEmotions.map((char: any) => (
                   <div key={char.id} className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center group hover:bg-white/[0.04] transition-colors">
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 rounded-2xl bg-aurora-cyan/10 flex items-center justify-center border border-aurora-cyan/20">

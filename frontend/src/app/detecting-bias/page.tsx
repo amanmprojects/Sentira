@@ -158,13 +158,13 @@ export default function DetectingBiasPage() {
                                 <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
                                     <h3 className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-4">Problematic Patterns</h3>
                                     <ul className="space-y-3">
-                                        {reelData.possible_issues.map((issue, i) => (
+                                        {(reelData.possible_issues || []).map((issue, i) => (
                                             <li key={i} className="flex gap-2 text-xs text-white/60">
                                                 <AlertCircle size={14} className="text-aurora-rose shrink-0" />
                                                 {issue}
                                             </li>
                                         ))}
-                                        {reelData.possible_issues.length === 0 && (
+                                        {(reelData.possible_issues || []).length === 0 && (
                                             <li className="text-xs text-white/20 italic">No significant bias patterns detected.</li>
                                         )}
                                     </ul>
@@ -172,7 +172,7 @@ export default function DetectingBiasPage() {
                                 <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
                                     <h3 className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-4">Neural Recommendations</h3>
                                     <ul className="space-y-3">
-                                        {reelData.suggestions.map((sug, i) => (
+                                        {(reelData.suggestions || []).map((sug, i) => (
                                             <li key={i} className="flex gap-2 text-xs text-white/60">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-aurora-rose/50 mt-1.5 shrink-0" />
                                                 {sug}

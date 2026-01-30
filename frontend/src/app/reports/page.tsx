@@ -57,7 +57,7 @@ export default function ReportsPage() {
                     doc.text(`Global Category: ${sentimentData.global_category}`, 25, 70);
                     doc.text("Emotional Cues Detected:", 25, 80);
 
-                    sentimentData.emotion_timeline.slice(0, 5).forEach((seg, i) => {
+                    (sentimentData.emotion_timeline || []).slice(0, 5).forEach((seg, i) => {
                         doc.text(`- ${seg.emotion} (${Math.round(seg.intensity * 100)}%) at ${seg.start.toFixed(1)}s`, 30, 90 + (i * 10));
                     });
                 }

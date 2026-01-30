@@ -18,7 +18,7 @@ import {
     Zap
 } from "lucide-react";
 import { useAnalysis, InputModality } from "@/context/AnalysisContext";
-import { analyzeSentiment, analyzeVideoUrl } from "@/lib/api";
+import { analyzeSentiment, analyzeSentimentUpload, analyzeVideoUrl, analyzeVideo } from "@/lib/api";
 
 const MODALITY_OPTIONS: { id: InputModality; label: string; icon: React.ReactNode; description: string }[] = [
     { id: "video", label: "Video", icon: <Video size={20} />, description: "Instagram URL or upload" },
@@ -72,7 +72,7 @@ export default function Dashboard() {
         const file = e.target.files?.[0];
         if (file) {
             setFile(file);
-            setContent(file.name);
+            setContent(""); // Clear content string for files, context holds input.file
             setIsDone(false);
         }
     };
@@ -87,10 +87,13 @@ export default function Dashboard() {
         setIsAnalyzing(true);
         setIsDone(false);
         try {
-            const [sentimentPromise, reelPromise] = [
-                analyzeSentiment(input.content),
-                analyzeVideoUrl(input.content).then(res => res.data)
-            ];
+            const sentimentPromise = input.file
+                ? analyzeSentimentUpload(input.file)
+                : analyzeSentiment(input.content);
+
+            const reelPromise = input.file
+                ? analyzeVideo(input.file).then(res => ({ main_summary: res.summary, commentary_summary: res.summary, possible_issues: [], transcript: "", suggestions: [], characters: [] }))
+                : analyzeVideoUrl(input.content).then(res => res.data);
 
             if (isAutoPilot) {
                 // In Auto-Pilot, navigate immediately and let background handle data
@@ -99,10 +102,12 @@ export default function Dashboard() {
                 router.push("/sentiment-analysis");
             } else {
                 // In manual mode, wait for completion to show "Done" on dashboard
-                await Promise.all([
-                    sentimentPromise.then(setSentimentData).catch(console.error),
-                    reelPromise.then(setReelData).catch(console.error)
+                const [sentiment, reel] = await Promise.all([
+                    sentimentPromise,
+                    reelPromise
                 ]);
+                setSentimentData(sentiment);
+                setReelData(reel as any);
                 setIsDone(true);
             }
         } catch (error) {
@@ -184,6 +189,7 @@ export default function Dashboard() {
                             {input.modality === "video" && (
                                 <VideoInput
                                     value={input.content}
+                                    input={input}
                                     onChange={(val: string) => { setContent(val); setIsDone(false); }}
                                     onFileUpload={handleFileUpload}
                                     fileInputRef={fileInputRef}
@@ -245,7 +251,7 @@ export default function Dashboard() {
     );
 }
 
-function VideoInput({ value, onChange, onFileUpload, fileInputRef, onClear, onLaunch, isDone }: any) {
+function VideoInput({ value, input, onChange, onFileUpload, fileInputRef, onClear, onLaunch, isDone }: any) {
     const { isAutoPilot, setIsAutoPilot, isAnalyzing } = useAnalysis();
     const [mode, setMode] = useState<"url" | "upload">("url");
 
@@ -268,14 +274,14 @@ function VideoInput({ value, onChange, onFileUpload, fileInputRef, onClear, onLa
                     {value && <button onClick={onClear} className="absolute right-5 top-5 text-white/20 hover:text-white"><X size={18} /></button>}
                 </div>
             ) : (
-                <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center cursor-pointer hover:border-aurora-cyan/30 transition-all">
+                <div onClick={() => fileInputRef.current?.click()} className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all ${value || input.file ? 'border-aurora-cyan/50 bg-aurora-cyan/5' : 'border-white/10 hover:border-aurora-cyan/30'}`}>
                     <input ref={fileInputRef} type="file" accept="video/*" onChange={onFileUpload} className="hidden" />
-                    <Upload className="mx-auto mb-2 text-white/20" size={24} />
-                    <p className="text-white/40 text-xs font-black uppercase">{value || "Drop Intelligence Cache"}</p>
+                    <Upload className={`mx-auto mb-2 ${value || input.file ? 'text-aurora-cyan' : 'text-white/20'}`} size={24} />
+                    <p className={`text-xs font-black uppercase ${value || input.file ? 'text-white' : 'text-white/40'}`}>{input.file?.name || value || "Drop Intelligence Cache"}</p>
                 </div>
             )}
 
-            {value && (
+            {(value || input.file) && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 pt-4 border-t border-white/5">
                     <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5">
                         <div className="flex items-center gap-3">
