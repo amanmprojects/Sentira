@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Scan,
@@ -13,24 +14,79 @@ import {
     Loader2,
     CheckCircle2,
     Cpu,
-    Fingerprint
+    Fingerprint,
+    XCircle
 } from "lucide-react";
+import { analyzeReel, type EnhancedReelAnalysis } from "@/lib/api";
 
 export default function AnalyzePage() {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState('url');
+    const [urlInput, setUrlInput] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [currentStep, setCurrentStep] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const [analysisResult, setAnalysisResult] = useState<EnhancedReelAnalysis | null>(null);
 
-    const startAnalysis = () => {
+    const startAnalysis = async () => {
+        if (!urlInput.trim()) {
+            setError('Please enter a valid URL');
+            return;
+        }
+
+        setError(null);
         setIsAnalyzing(true);
-        let p = 0;
-        const interval = setInterval(() => {
-            p += 2;
-            setProgress(p);
-            if (p >= 100) {
-                clearInterval(interval);
-            }
-        }, 100);
+        setProgress(0);
+        setCurrentStep('Connecting to source...');
+
+        // Simulate initial progress while waiting for API
+        const progressInterval = setInterval(() => {
+            setProgress(prev => {
+                if (prev >= 85) {
+                    clearInterval(progressInterval);
+                    return 85;
+                }
+                // Update step based on progress
+                if (prev >= 20 && prev < 50) {
+                    setCurrentStep('Downloading video content...');
+                } else if (prev >= 50 && prev < 70) {
+                    setCurrentStep('Multimodal analysis in progress...');
+                } else if (prev >= 70) {
+                    setCurrentStep('Fact-checking claims...');
+                }
+                return prev + 2;
+            });
+        }, 200);
+
+        try {
+            const result = await analyzeReel(urlInput, true);
+            clearInterval(progressInterval);
+            setProgress(100);
+            setCurrentStep('Analysis complete!');
+            setAnalysisResult(result);
+
+            // Navigate to results page with the analysis data
+            setTimeout(() => {
+                // Store result in sessionStorage for the results page
+                sessionStorage.setItem('analysisResult', JSON.stringify(result));
+                sessionStorage.setItem('analyzedUrl', urlInput);
+                router.push(`/analyze/${encodeURIComponent(urlInput)}`);
+            }, 1000);
+        } catch (err) {
+            clearInterval(progressInterval);
+            setIsAnalyzing(false);
+            setProgress(0);
+            setError(err instanceof Error ? err.message : 'Failed to analyze video');
+        }
+    };
+
+    const resetAnalysis = () => {
+        setIsAnalyzing(false);
+        setProgress(0);
+        setError(null);
+        setAnalysisResult(null);
+        setCurrentStep('');
     };
 
     return (
@@ -65,14 +121,32 @@ export default function AnalyzePage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-4 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all border-2 ${activeTab === tab.id
-                                    ? 'bg-aurora-cyan border-aurora-cyan text-black shadow-[0_0_30px_rgba(0,242,254,0.3)] scale-105'
-                                    : 'bg-white/5 border-white/5 text-white/30 hover:bg-white/10'
+                                ? 'bg-aurora-cyan border-aurora-cyan text-black shadow-[0_0_30px_rgba(0,242,254,0.3)] scale-105'
+                                : 'bg-white/5 border-white/5 text-white/30 hover:bg-white/10'
                                 }`}
                         >
                             {tab.icon} {tab.label}
                         </button>
                     ))}
                 </div>
+
+                {/* Error Message */}
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8 p-6 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center gap-4"
+                    >
+                        <XCircle className="text-red-400" size={24} />
+                        <span className="text-red-300 font-bold">{error}</span>
+                        <button
+                            onClick={() => setError(null)}
+                            className="ml-auto text-red-400 hover:text-red-300"
+                        >
+                            Dismiss
+                        </button>
+                    </motion.div>
+                )}
 
                 {/* Scanner Interface */}
                 <AnimatePresence mode="wait">
@@ -97,14 +171,17 @@ export default function AnalyzePage() {
                                     </div>
                                     <input
                                         type="text"
-                                        placeholder="ENTER SOURCE IDENTIFIER (URL)..."
-                                        className="w-full bg-white/5 border-2 border-white/5 rounded-[2.5rem] py-8 pl-24 pr-10 text-xl font-bold italic tracking-tight outline-none focus:border-aurora-cyan/30 focus:bg-white/10 transition-all placeholder:text-white/10"
+                                        value={urlInput}
+                                        onChange={(e) => setUrlInput(e.target.value)}
+                                        placeholder="ENTER INSTAGRAM REEL URL..."
+                                        disabled={isAnalyzing}
+                                        className="w-full bg-white/5 border-2 border-white/5 rounded-[2.5rem] py-8 pl-24 pr-10 text-xl font-bold italic tracking-tight outline-none focus:border-aurora-cyan/30 focus:bg-white/10 transition-all placeholder:text-white/10 disabled:opacity-50"
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-8">
                                     <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 flex flex-col gap-4 italic text-sm text-white/30 font-medium">
-                                        <div className="flex items-center gap-2 text-aurora-cyan text-xs font-black uppercase not-italic"><AlertCircle size={16} /> Compatibility Checks</div>
-                                        Optimized for global video protocols including HTTP-Live-Streaming and Neural-Simulcasts.
+                                        <div className="flex items-center gap-2 text-aurora-cyan text-xs font-black uppercase not-italic"><AlertCircle size={16} /> Supported Platforms</div>
+                                        Instagram Reels, YouTube Shorts, TikTok videos. Enter the full URL to begin analysis.
                                     </div>
                                     <div className="aspect-video rounded-[2rem] bg-[#080808] border border-white/5 flex items-center justify-center relative group overflow-hidden">
                                         <div className="absolute inset-0 bg-aurora-cyan/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -159,7 +236,8 @@ export default function AnalyzePage() {
                             {!isAnalyzing ? (
                                 <button
                                     onClick={startAnalysis}
-                                    className="w-full py-8 bg-gradient-to-r from-aurora-cyan via-aurora-blue to-aurora-rose text-black rounded-[2.5rem] text-3xl font-black uppercase tracking-tighter italic hover:scale-[1.02] transition-transform flex items-center justify-center gap-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+                                    disabled={activeTab === 'url' && !urlInput.trim()}
+                                    className="w-full py-8 bg-gradient-to-r from-aurora-cyan via-aurora-blue to-aurora-rose text-black rounded-[2.5rem] text-3xl font-black uppercase tracking-tighter italic hover:scale-[1.02] transition-transform flex items-center justify-center gap-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 >
                                     Engage Neural Scan <Cpu size={36} className="animate-spin-slow" />
                                 </button>
@@ -173,7 +251,7 @@ export default function AnalyzePage() {
                                             </div>
                                             <div className="text-left">
                                                 <span className="font-black text-2xl uppercase italic block">Neuromorphic Processing</span>
-                                                <span className="text-xs font-bold text-white/30 uppercase tracking-[0.4em]">Gemini Flash 2.5 Hub Connected</span>
+                                                <span className="text-xs font-bold text-white/30 uppercase tracking-[0.4em]">{currentStep || 'Gemini Flash 2.5 Hub Connected'}</span>
                                             </div>
                                         </div>
                                         <span className="text-4xl font-black italic aurora-text">{progress}%</span>
@@ -192,6 +270,15 @@ export default function AnalyzePage() {
                                         <ScannerStep active={progress >= 50} label="Multimodal Sync" />
                                         <ScannerStep active={progress >= 85} label="Logic Encoding" />
                                     </div>
+
+                                    {progress < 100 && (
+                                        <button
+                                            onClick={resetAnalysis}
+                                            className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-white/10 transition-colors"
+                                        >
+                                            Cancel Analysis
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>

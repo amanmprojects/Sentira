@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Reel Fact Checker",
+    "slug": "reel-fact-checker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "reelfactchecker",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.reelfactchecker.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.reelfactchecker.app",
+      "intentFilters": [
+        {
+          "action": "android.intent.action.SEND",
+          "data": {
+            "mimeType": [
+              "text/plain"
+            ]
+          },
+          "categories": [
+            "android.intent.category.DEFAULT"
+          ]
+        },
+        {
+          "action": "android.intent.action.VIEW",
+          "data": {
+            "scheme": "https",
+            "host": "*",
+            "pathPrefix": "/reel/"
+          },
+          "categories": [
+            "android.intent.category.DEFAULT",
+            "android.intent.category.BROWSABLE"
+          ]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

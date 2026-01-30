@@ -13,6 +13,7 @@ import {
   Globe
 } from "lucide-react";
 import { useRef } from "react";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 export default function Home() {
   const containerRef = useRef(null);
@@ -60,7 +61,7 @@ export default function Home() {
       <main className="relative z-10 pt-48">
         {/* Hero Section */}
         <section className="px-8 pb-32 flex flex-col items-center text-center m-5">
-          
+
 
           <motion.h1
             style={{ y, opacity }}
@@ -106,7 +107,13 @@ export default function Home() {
             viewport={{ once: true }}
             className="relative rounded-[3rem] cyber-glass border border-white/10 p-2 overflow-hidden shadow-[0_0_100px_rgba(0,242,254,0.1)]"
           >
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-aurora-cyan to-transparent"></div>
+            <BorderBeam
+              size={120}
+              duration={8}
+              colorFrom="#00f2fe"
+              colorTo="#ff61d2"
+              beamBorderRadius={48}
+            />
             <div className="aspect-[21/9] w-full bg-[#080808] rounded-[2.5rem] flex items-center justify-center relative overflow-hidden">
               {/* System Nodes UI Mockup */}
               <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -156,8 +163,16 @@ function TechCard({ icon, title, desc }: { icon: React.ReactNode, title: string,
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="p-10 rounded-[2.5rem] cyber-glass border border-white/5 hover:border-white/20 transition-all group"
+      className="relative p-10 rounded-[2.5rem] cyber-glass border border-white/5 hover:border-white/20 transition-all group overflow-hidden"
     >
+      <BorderBeam
+        size={60}
+        duration={6}
+        colorFrom="#00f2fe"
+        colorTo="#9b41ff"
+        beamBorderRadius={40}
+        delay={Math.random() * 3}
+      />
       <div className="mb-8 p-5 rounded-2xl bg-white/5 inline-block group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
         {icon}
       </div>

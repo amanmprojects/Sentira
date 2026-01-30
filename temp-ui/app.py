@@ -171,7 +171,7 @@ with tab1:
                     st.divider()
 
                     # Create result tabs
-                    result_tabs = st.tabs(["📋 Overview", "👥 Characters", "⚠️ Issues & Tips", "🔞 Age Ratings", "🎙️ Transcript"])
+                    result_tabs = st.tabs(["📋 Overview", "👥 Characters", "⚠️ Issues & Tips", "🔞 Age Ratings", "🎙️ Transcript", "✅ Fact Check"])
 
                     # Tab: Overview
                     with result_tabs[0]:
@@ -264,6 +264,145 @@ with tab1:
                             st.text_area("Transcript", value=transcript, height=400, disabled=True)
                         else:
                             st.caption("No transcript available")
+
+                    # Tab: Fact Check
+                    with result_tabs[5]:
+                        st.subheader("✅ AI Fact-Check Report")
+
+                        fact_check_report = result.get("fact_check_report")
+
+                        if not fact_check_report:
+                            st.info("📊 Fact-checking was not performed on this analysis.", icon="🔍")
+                            st.caption("Try analyzing again with fact-checking enabled.")
+                        else:
+                            # Overall truth score
+                            overall_truth_score = result.get("overall_truth_score")
+                            if overall_truth_score is not None:
+                                st.divider()
+                                st.subheader("📊 Overall Truth Score")
+
+                                # Score display with color coding
+                                score_percent = int(overall_truth_score * 100)
+
+                                if score_percent >= 80:
+                                    score_color = "green"
+                                    score_label = "High Credibility"
+                                    score_emoji = "🟢"
+                                elif score_percent >= 60:
+                                    score_color = "orange"
+                                    score_label = "Medium Credibility"
+                                    score_emoji = "🟡"
+                                else:
+                                    score_color = "red"
+                                    score_label = "Low Credibility"
+                                    score_emoji = "🔴"
+
+                                col1, col2, col3 = st.columns([1, 2, 1])
+
+                                with col2:
+                                    st.metric(
+                                        f"{score_emoji} Truth Score",
+                                        f"{score_percent}%",
+                                        score_label,
+                                        delta_color="normal"
+                                    )
+
+                                    st.progress(overall_truth_score)
+
+                                # Harmfulness assessment
+                                harmfulness = fact_check_report.get("content_harmfulness", "unknown").upper()
+                                harmfulness_colors = {
+                                    "LOW": "green",
+                                    "MEDIUM": "orange",
+                                    "HIGH": "red"
+                                }
+                                st.info(f"🛡️ Content Harmfulness: **{harmfulness}**", icon="🛡️")
+
+                            st.divider()
+
+                            # Claims detected
+                            claims = fact_check_report.get("claims_detected", [])
+
+                            if not claims:
+                                st.success("✅ No factual claims were detected in this content that required verification.", icon="✅")
+                            else:
+                                st.subheader(f"🔍 {len(claims)} Factual Claim(s) Checked")
+
+                                # Summary header
+                                st.markdown(f"**Analysis Time:** {fact_check_report.get('analysis_timestamp', 'Unknown')}")
+
+                                st.divider()
+
+                                # Display each claim
+                                for idx, claim in enumerate(claims, 1):
+                                    with st.container(border=True):
+                                        # Claim header with status
+                                        claim_text = claim.get("claim_text", "Unknown claim")
+                                        claim_type = claim.get("claim_type", "other")
+                                        confidence = claim.get("confidence", 0)
+                                        verification_status = claim.get("verification_status", "uncertain")
+
+                                        # Status badge
+                                        status_emoji = {
+                                            "verified_true": "✅",
+                                            "verified_false": "❌",
+                                            "mixed": "⚖️",
+                                            "uncertain": "❓",
+                                            "no_claims": "ℹ️"
+                                        }.get(verification_status, "❓")
+
+                                        status_color = {
+                                            "verified_true": "green",
+                                            "verified_false": "red",
+                                            "mixed": "orange",
+                                            "uncertain": "gray",
+                                            "no_claims": "blue"
+                                        }.get(verification_status, "gray")
+
+                                        st.markdown(f"### {status_emoji} Claim #{idx}")
+                                        st.markdown(f"> {claim_text}")
+
+                                        # Claim metadata
+                                        col_a, col_b, col_c = st.columns(3)
+
+                                        with col_a:
+                                            st.metric("Type", claim_type.title())
+                                        with col_b:
+                                            st.metric("Confidence", f"{int(confidence * 100)}%")
+                                        with col_c:
+                                            st.metric("Status", verification_status.replace("_", " ").title())
+
+                                        # Explanation
+                                        explanation = claim.get("explanation")
+                                        if explanation:
+                                            st.divider()
+                                            st.markdown("**📝 Explanation**")
+                                            st.write(explanation)
+
+                                        # Sources
+                                        sources = claim.get("sources", [])
+                                        if sources:
+                                            st.divider()
+                                            st.subheader(f"🔗 Sources ({len(sources)})")
+                                            for source_idx, source in enumerate(sources, 1):
+                                                url = source.get("url", "")
+                                                title = source.get("title", "Untitled Source")
+                                                snippet = source.get("snippet", "")
+
+                                                with st.expander(f"Source {source_idx}: {title}", expanded=False):
+                                                    st.markdown(f"**URL:** [{url}]({url})")
+                                                    if snippet:
+                                                        st.markdown(f"*{snippet}*")
+
+                            st.divider()
+
+                            # Recommendations
+                            recommendations = fact_check_report.get("recommendations", [])
+                            if recommendations:
+                                st.subheader("💡 Recommendations for Viewers")
+                                with st.container(border=True):
+                                    for rec in recommendations:
+                                        st.info(rec, icon="💡")
 
                     # Raw JSON at bottom (always visible)
                     st.divider()
