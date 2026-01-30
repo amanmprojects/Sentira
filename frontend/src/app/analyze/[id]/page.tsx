@@ -121,20 +121,40 @@ export default function AnalysisResult() {
                                 </h2>
                                 <div className="grid md:grid-cols-2 gap-6">
                                     {analysis.characters.map((char, i) => (
-                                        <div key={i} className="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-10 h-10 rounded-full bg-aurora-rose/20 flex items-center justify-center">
-                                                    <Users size={20} className="text-aurora-rose" />
+                                        <div key={i} className="group rounded-3xl bg-white/5 border border-white/10 overflow-hidden hover:border-aurora-rose/30 transition-all hover:bg-white/10 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)]">
+                                            {char.frame_image_b64 && (
+                                                <div className="relative w-full aspect-[4/5] overflow-hidden">
+                                                    <img
+                                                        src={char.frame_image_b64}
+                                                        alt=""
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                                 </div>
-                                                <span className="font-bold">Character {i + 1}</span>
+                                            )}
+                                            <div className="p-6 space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 rounded-2xl bg-aurora-rose/10 flex items-center justify-center border border-aurora-rose/20 group-hover:bg-aurora-rose/20 transition-colors">
+                                                        <Users size={24} className="text-aurora-rose" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-black text-lg block">Character {i + 1}</span>
+                                                        {char.timestamp !== undefined && (
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30">
+                                                                Captured at {char.timestamp.toFixed(1)}s
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4 text-xs font-bold uppercase tracking-tight">
+                                                    {char.gender && <div className="p-2 rounded-lg bg-white/5 border border-white/5"><span className="text-white/20 mr-1">Gender:</span> {char.gender}</div>}
+                                                    {char.race && <div className="p-2 rounded-lg bg-white/5 border border-white/5"><span className="text-white/20 mr-1">Race:</span> {char.race}</div>}
+                                                    {char.tone && <div className="p-2 rounded-lg bg-white/5 border border-white/5"><span className="text-white/20 mr-1">Tone:</span> {char.tone}</div>}
+                                                    {char.mood && <div className="p-2 rounded-lg bg-white/5 border border-white/5"><span className="text-white/20 mr-1">Mood:</span> {char.mood}</div>}
+                                                    {char.facial_expression && <div className="p-2 rounded-lg bg-white/5 border border-white/5 col-span-2"><span className="text-white/20 mr-1">Expression:</span> {char.facial_expression}</div>}
+                                                </div>
+                                                {char.notes && <p className="text-white/50 text-sm leading-relaxed italic">{char.notes}</p>}
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2 text-sm">
-                                                {char.race && <div><span className="text-white/40">Race:</span> {char.race}</div>}
-                                                {char.tone && <div><span className="text-white/40">Tone:</span> {char.tone}</div>}
-                                                {char.mood && <div><span className="text-white/40">Mood:</span> {char.mood}</div>}
-                                                {char.facial_expression && <div><span className="text-white/40">Expression:</span> {char.facial_expression}</div>}
-                                            </div>
-                                            {char.notes && <p className="text-white/50 text-sm">{char.notes}</p>}
                                         </div>
                                     ))}
                                 </div>

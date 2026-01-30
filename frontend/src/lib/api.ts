@@ -3,11 +3,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 // ==================== Type Definitions ====================
 
 export interface Character {
+    gender?: string;
     race?: string;
     tone?: string;
     facial_expression?: string;
     mood?: string;
     notes?: string;
+    timestamp?: number;
+    frame_image_b64?: string;
 }
 
 export interface GoogleSearchSource {
