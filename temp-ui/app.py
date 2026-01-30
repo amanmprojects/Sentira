@@ -62,58 +62,106 @@ with tab1:
                     progress_bar.empty()
                     
                     result = response.json()
-                    
+
                     st.divider()
-                    
-                    # ===== MAIN SUMMARY =====
-                    st.subheader("📝 Main Summary")
-                    st.write(result.get("main_summary", "Summary not available."))
-                    
-                    # ===== COMMENTARY / SUMMARY =====
-                    st.subheader("💬 Commentary Summary")
-                    st.write(result.get("commentary_summary", "No commentary available."))
-                    
-                    # ===== TRANSCRIPT =====
-                    transcript = result.get("transcript")
-                    if transcript:
-                        st.subheader("🎙️ Transcript")
-                        with st.expander("View full transcript", expanded=False):
-                            st.text(transcript)
-                    
-                    # ===== CHARACTERS =====
-                    characters = result.get("characters", [])
-                    if characters:
+
+                    # Create result tabs
+                    result_tabs = st.tabs(["📋 Overview", "👥 Characters", "⚠️ Issues & Tips", "🔞 Age Ratings", "🎙️ Transcript"])
+
+                    # Tab: Overview
+                    with result_tabs[0]:
+                        st.subheader("📝 Main Summary")
+                        st.write(result.get("main_summary", "Summary not available."))
+
+                        st.divider()
+                        st.subheader("💬 Commentary Summary")
+                        st.write(result.get("commentary_summary", "No commentary available."))
+
+                    # Tab: Characters
+                    with result_tabs[1]:
                         st.subheader("👥 Characters Detected")
-                        for i, char in enumerate(characters, 1):
-                            with st.expander(f"Character {i}", expanded=True):
-                                cols = st.columns(2)
-                                with cols[0]:
-                                    st.markdown(f"**Race/Ethnicity:** {char.get('race', 'Unknown')}")
-                                    st.markdown(f"**Tone:** {char.get('tone', 'Unknown')}")
-                                    st.markdown(f"**Facial Expression:** {char.get('facial_expression', 'Unknown')}")
-                                with cols[1]:
-                                    st.markdown(f"**Mood:** {char.get('mood', 'Unknown')}")
-                                    if char.get('notes'):
-                                        st.markdown(f"**Notes:** {char.get('notes')}")
-                    
-                    # ===== POSSIBLE ISSUES =====
-                    issues = result.get("possible_issues", [])
-                    if issues:
-                        st.subheader("⚠️ Possible Issues / Violations")
-                        for issue in issues:
-                            st.warning(f"• {issue}")
-                    else:
-                        st.subheader("✅ Content Check")
-                        st.success("No content violations or sensitive topics detected.")
-                    
-                    # ===== SUGGESTIONS =====
-                    suggestions = result.get("suggestions", [])
-                    if suggestions:
-                        st.subheader("💡 Suggestions & Observations")
-                        for suggestion in suggestions:
-                            st.info(f"• {suggestion}")
-                    
-                    # ===== RAW JSON (collapsible) =====
+                        characters = result.get("characters", [])
+                        if characters:
+                            # Grid layout: 2 or 3 per row
+                            cols_per_row = 2 if len(characters) <= 4 else 3
+
+                            for i in range(0, len(characters), cols_per_row):
+                                char_cols = st.columns(cols_per_row, gap="medium")
+
+                                for j in range(cols_per_row):
+                                    idx = i + j
+                                    if idx < len(characters):
+                                        char = characters[idx]
+                                        with char_cols[j]:
+                                            with st.container(border=True):
+                                                st.markdown(f"**Character {idx + 1}**")
+                                                cols = st.columns(2)
+                                                with cols[0]:
+                                                    st.metric("Race", char.get('race', 'Unknown'))
+                                                    st.metric("Tone", char.get('tone', 'Unknown'))
+                                                with cols[1]:
+                                                    st.metric("Expression", char.get('facial_expression', 'Unknown'))
+                                                    st.metric("Mood", char.get('mood', 'Unknown'))
+                                                if char.get('notes'):
+                                                    st.caption(f"Note: {char.get('notes')}")
+                        else:
+                            st.caption("No characters detected")
+
+                    # Tab: Issues & Tips
+                    with result_tabs[2]:
+                        col1, col2 = st.columns([1, 1], gap="large")
+
+                        with col1:
+                            issues = result.get("possible_issues", [])
+                            if issues:
+                                st.subheader("⚠️ Possible Issues")
+                                with st.container(border=True):
+                                    for issue in issues:
+                                        st.warning(issue, icon="⚠️")
+                            else:
+                                st.subheader("✅ Content Check")
+                                st.success("No violations detected", icon="✅")
+
+                        with col2:
+                            suggestions = result.get("suggestions", [])
+                            if suggestions:
+                                st.subheader("💡 Suggestions")
+                                with st.container(border=True):
+                                    for suggestion in suggestions:
+                                        st.info(suggestion, icon="💡")
+                            else:
+                                st.caption("No additional suggestions")
+
+                    # Tab: Age Ratings
+                    with result_tabs[3]:
+                        st.subheader("🔞 Age Suitability Rating")
+
+                        issues = result.get("possible_issues", [])
+
+                        # Determine rating based on issues
+                        if not issues:
+                            st.success("Safe for All Ages", icon="✅")
+                            st.caption("No content violations or sensitive topics detected")
+                        elif len(issues) <= 2 and not any(
+                            k in str(issues).lower() for k in ["explicit", "violence", "adult", "graphic", "nudity"]
+                        ):
+                            st.warning("Suitable for Ages 13+", icon="⚠️")
+                            st.caption("Contains mild content; parental guidance recommended")
+                        else:
+                            st.error("Recommended for 18+ Only", icon="🔞")
+                            st.caption("Contains mature themes or explicit content")
+
+                    # Tab: Transcript
+                    with result_tabs[4]:
+                        transcript = result.get("transcript")
+                        if transcript:
+                            st.subheader("🎙️ Full Transcript")
+                            st.text_area("Transcript", value=transcript, height=400, disabled=True)
+                        else:
+                            st.caption("No transcript available")
+
+                    # Raw JSON at bottom (always visible)
+                    st.divider()
                     with st.expander("🔧 View Raw JSON Response"):
                         st.json(result)
                 
@@ -172,10 +220,11 @@ with tab2:
                     progress_bar.empty()
                     
                     result = response.json()
-                    
+
                     st.divider()
-                    st.subheader("📝 Video Summary")
-                    st.write(result.get("summary", "Summary not available."))
+                    with st.container(border=True):
+                        st.subheader("📝 Video Summary")
+                        st.write(result.get("summary", "Summary not available."))
                 else:
                     status_container.empty()
                     progress_bar.empty()
