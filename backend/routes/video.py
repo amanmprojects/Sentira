@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import Optional
 import os
@@ -9,6 +9,7 @@ import uuid
 from config import client, DOWNLOADER_BASE_URL, model
 from routes.fact_check import FactCheckReport
 from services.fact_checker import FactChecker
+from services.youtube_downloader import get_youtube_downloader
 
 router = APIRouter(prefix="/analyze-video", tags=["video"])
 
@@ -110,6 +111,13 @@ class ReelAnalysisRequest(BaseModel):
     """Request body for reel analysis."""
     post_url: str = Field(
         description="The Instagram reel/post URL to analyze."
+    )
+
+
+class YouTubeAnalysisRequest(BaseModel):
+    """Request body for YouTube video analysis."""
+    video_url: str = Field(
+        description="The YouTube video or Shorts URL to analyze."
     )
 
 
@@ -368,6 +376,168 @@ async def analyze_reel(request: ReelAnalysisRequest, enable_fact_check: bool = T
         raise HTTPException(
             status_code=500,
             detail=f"Failed to analyze reel: {str(e)}"
+        )
+    finally:
+        # Clean up Gemini file
+        try:
+            if myfile:
+                client.files.delete(name=myfile.name)
+        except Exception:
+            pass
+
+        # Clean up temp file
+        try:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+        except Exception:
+            pass
+
+
+# ==================== Analyze YouTube Endpoint ====================
+
+YOUTUBE_ANALYSIS_PROMPT = """
+Analyze this YouTube video and provide a structured analysis.
+
+You must provide:
+1. **main_summary**: A concise 2-3 sentence summary of the video's main topic/message.
+2. **characters**: List each person/character in the video with their:
+   - race (perceived ethnicity, or "Unknown" if unclear)
+   - tone (sarcastic, serious, comedic, aggressive, friendly, etc.)
+   - facial_expression (smiling, frowning, neutral, angry, surprised, etc.)
+   - mood (happy, sad, anxious, excited, calm, etc.)
+   - notes (clothing, role, any other observations)
+3. **commentary_summary**: A thorough 8-10 sentence plot explanation. Describe the full narrative arc: what happens at the start, the key events or actions, any twist/punchline, and how it ends. Include dialogue context and on-screen text. Think of it as explaining the video's story to someone who hasn't seen it.
+4. **possible_issues**: List any potential content violations or sensitive topics such as:
+   - racism, homophobia, misogyny, casteism, islamophobia, hinduphobia
+   - violence, hate speech, harassment
+   - Leave empty if no issues detected.
+   - IMPORTANT: Do NOT include misinformation claims here - misinformation is handled by a separate fact-checking system with real-time search capabilities.
+5. **transcript**: Transcribe all speech/audio in the video. Include speaker labels if multiple speakers.
+6. **suggestions**: Any observations, context needed, fact-check recommendations, or content warnings.
+
+Be thorough but objective. Do not make assumptions without evidence from the video.
+"""
+
+
+@router.post("/youtube", response_model=EnhancedReelAnalysis)
+async def analyze_youtube(
+    request: YouTubeAnalysisRequest,
+    enable_fact_check: bool = Query(default=True, description="Enable fact-checking")
+):
+    """
+    Analyze a YouTube video by URL and return structured analysis with optional fact-checking.
+
+    This endpoint:
+    1. Downloads the YouTube video using pytubefix
+    2. Sends it to Gemini for structured analysis
+    3. Optionally performs fact-checking using Google Search
+    4. Returns detailed analysis including characters, issues, transcript, and fact-check results
+
+    Query Parameters:
+        enable_fact_check: Set to false to skip fact-checking (default: true)
+    """
+
+    myfile = None
+    temp_file_path = None
+
+    try:
+        downloader = get_youtube_downloader()
+
+        # Step 1: Download the YouTube video
+        try:
+            video_bytes, filename, metadata = downloader.download_video_bytes(
+                request.video_url,
+                max_quality="720p"
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to download YouTube video: {str(e)}"
+            )
+
+        # Step 2: Save to temp file
+        temp_file_path = f"temp_youtube_{uuid.uuid4().hex}.mp4"
+        with open(temp_file_path, "wb") as f:
+            f.write(video_bytes)
+
+        # Step 3: Upload to Gemini
+        myfile = client.files.upload(file=temp_file_path)
+
+        # Wait for file to be processed
+        max_wait = 120
+        waited = 0
+        while myfile.state == "PROCESSING" and waited < max_wait:
+            time.sleep(2)
+            myfile = client.files.get(name=myfile.name)
+            waited += 2
+
+        if myfile.state != "ACTIVE":
+            raise HTTPException(
+                status_code=500,
+                detail=f"Gemini file processing failed. State: {myfile.state}"
+            )
+
+        # Step 4: Analyze with Gemini
+        response = client.models.generate_content(
+            model=model,
+            contents=[myfile, YOUTUBE_ANALYSIS_PROMPT],
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": ReelAnalysis,
+            },
+        )
+
+        analysis = ReelAnalysis.model_validate_json(response.text)
+
+        # Step 5: Fact-check using Google Search (if enabled)
+        fact_check_report = None
+        overall_truth_score = None
+
+        if enable_fact_check:
+            try:
+                fact_checker = FactChecker(client)
+                fact_check_report = fact_checker.fact_check_claims(
+                    transcript=analysis.transcript or "",
+                    analysis_summary=analysis.commentary_summary or ""
+                )
+                overall_truth_score = fact_check_report.overall_truth_score
+            except Exception as fact_check_error:
+                # Log the error but don't fail the entire request
+                print(f"Fact-checking failed: {fact_check_error}")
+                # Create a fallback report
+                fact_check_report = FactCheckReport(
+                    claims_detected=[],
+                    overall_truth_score=0.8,
+                    content_harmfulness="low",
+                    recommendations=["Fact-checking unavailable - review content manually"]
+                )
+                overall_truth_score = fact_check_report.overall_truth_score
+
+        # Filter out misinformation-related issues since fact-checker handles those
+        misinformation_keywords = ['misinformation', 'false claim', 'falsely claim', 'fake news', 'misleading claim']
+        filtered_issues = [
+            issue for issue in analysis.possible_issues
+            if not any(keyword in issue.lower() for keyword in misinformation_keywords)
+        ]
+
+        # Return enhanced analysis
+        return EnhancedReelAnalysis(
+            main_summary=analysis.main_summary,
+            characters=analysis.characters,
+            commentary_summary=analysis.commentary_summary,
+            possible_issues=filtered_issues,
+            transcript=analysis.transcript,
+            suggestions=analysis.suggestions,
+            fact_check_report=fact_check_report,
+            overall_truth_score=overall_truth_score
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to analyze YouTube video: {str(e)}"
         )
     finally:
         # Clean up Gemini file
