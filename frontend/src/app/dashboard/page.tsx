@@ -17,6 +17,7 @@ import {
     Sparkles,
 } from "lucide-react";
 import { useAnalysis, InputModality } from "@/context/AnalysisContext";
+import FactCheckModal from "@/components/FactCheckModal";
 
 const MODALITY_OPTIONS: { id: InputModality; label: string; icon: React.ReactNode; description: string }[] = [
     { id: "video", label: "Video", icon: <Video size={20} />, description: "Instagram Reel & YT Short URL or upload" },
@@ -55,6 +56,7 @@ export default function Dashboard() {
     const router = useRouter();
     const { input, setModality, setContent, setFile, isInputValid, clearInput } = useAnalysis();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isFactCheckModalOpen, setIsFactCheckModalOpen] = useState(false);
 
     const handleModalityChange = (modality: InputModality) => {
         setModality(modality);
@@ -68,10 +70,17 @@ export default function Dashboard() {
         }
     };
 
-    const handleActionCardClick = (href: string) => {
+    const handleActionCardClick = (cardId: string, href: string) => {
         if (!isInputValid) {
             return;
         }
+        
+        // Open modal for fact checking instead of navigating
+        if (cardId === "factcheck") {
+            setIsFactCheckModalOpen(true);
+            return;
+        }
+        
         router.push(href);
     };
 
@@ -210,7 +219,7 @@ export default function Dashboard() {
                                 card={card}
                                 index={index}
                                 isInputValid={isInputValid}
-                                onClick={() => handleActionCardClick(card.href)}
+                                onClick={() => handleActionCardClick(card.id, card.href)}
                             />
                         ))}
                     </div>
@@ -226,6 +235,12 @@ export default function Dashboard() {
                     )}
                 </motion.div>
             </div>
+
+            {/* Fact Check Modal */}
+            <FactCheckModal
+                isOpen={isFactCheckModalOpen}
+                onClose={() => setIsFactCheckModalOpen(false)}
+            />
         </div>
     );
 }
