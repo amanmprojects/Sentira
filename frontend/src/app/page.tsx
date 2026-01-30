@@ -46,7 +46,7 @@ export default function Home() {
       <div className="absolute top-[40%] right-20 w-48 h-48 bg-aurora-rose/20 blur-[100px] rounded-full animate-float" style={{ animationDelay: '2s' }}></div>
 
       {/* Navbar */}
-      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-h-20 max-w-7xl rounded-full z-50 px-8 py-6 flex justify-between items-center bg-white/2 backdrop-blur-sm border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]  transition-all duration-300">
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-h-20 max-w-7xl rounded-full z-50 px-8 py-6 flex justify-between items-center bg-white/1 backdrop-blur-xs border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]  transition-all duration-300">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 cyber-glass rounded-xl flex items-center justify-center border border-white/10 group">
             <Binary className="text-aurora-cyan group-hover:rotate-12 transition-transform" size={24} />
@@ -70,7 +70,7 @@ export default function Home() {
         </div>
       </nav>
 
-      <main className="relative z-10 pt-48">
+      <main className="relative z-10 pt-40">
         {/* Hero Section */}
         <section className="px-8 pb-32 flex flex-col items-center text-center m-5">
 
@@ -87,7 +87,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 1 }}
-            className="text-lg md:text-2xl text-white/40 max-w-2xl font-medium leading-relaxed mb-16 px-4"
+            className="text-lg md:text-2xl text-white/40 max-w-4xl font-medium leading-relaxed mb-16 px-4"
           >
             The next-generation multimodal framework for social media bias detection,
             driven by state-of-the-art AI temporal reasoning.
@@ -100,7 +100,7 @@ export default function Home() {
             className="flex flex-col sm:flex-row gap-8 items-center"
           >
             <Link href="/dashboard" className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-aurora-cyan via-aurora-blue to-aurora-rose rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
+              <div className="absolute -inset-1 bg-linear-to-r from-aurora-cyan via-aurora-blue to-aurora-rose rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-1000"></div>
               <button className="relative px-12 py-6 bg-black text-white text-xl font-black rounded-xl uppercase tracking-widest flex items-center gap-4 transition-transform hover:scale-[1.02]">
                 Launch System <Zap size={24} className="fill-white" />
               </button>
@@ -114,7 +114,7 @@ export default function Home() {
 
 
         {/* Technical Features Grid */}
-        <section id="tech" className="px-8 max-w-7xl mx-auto py-32">
+        {/* <section id="tech" className="px-8 max-w-7xl mx-auto py-32">
           <div className="grid md:grid-cols-4 gap-8">
             <TechCard
               icon={<ShieldCheck className="text-aurora-cyan" />}
@@ -137,33 +137,33 @@ export default function Home() {
               desc="Comparative source analysis across global social ecosystems."
             />
           </div>
-        </section>
+        </section> */}
       </main>
     </div>
   );
 }
 
-function TechCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className="relative p-10 rounded-[2.5rem] cyber-glass border border-white/5 hover:border-white/20 transition-all group overflow-hidden"
-    >
-      <BorderBeam
-        size={60}
-        duration={6}
-        colorFrom="#00f2fe"
-        colorTo="#9b41ff"
-        beamBorderRadius={40}
-        delay={Math.random() * 3}
-      />
-      <div className="mb-8 p-5 rounded-2xl bg-white/5 inline-block group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
-        {icon}
-      </div>
-      <h3 className="text-xl font-black mb-4 uppercase tracking-tight italic">{title}</h3>
-      <p className="text-sm text-white/40 leading-relaxed font-medium">{desc}</p>
-    </motion.div>
-  );
-}
+// function TechCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
+//   return (
+//     <motion.div
+//       initial={{ opacity: 0, y: 20 }}
+//       whileInView={{ opacity: 1, y: 0 }}
+//       viewport={{ once: true }}
+//       className="relative p-10 rounded-[2.5rem] cyber-glass border border-white/5 hover:border-white/20 transition-all group overflow-hidden"
+//     >
+//       <BorderBeam
+//         size={60}
+//         duration={6}
+//         colorFrom="#00f2fe"
+//         colorTo="#9b41ff"
+//         beamBorderRadius={40}
+//         delay={Math.random() * 3}
+//       />
+//       <div className="mb-8 p-5 rounded-2xl bg-white/5 inline-block group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
+//         {icon}
+//       </div>
+//       <h3 className="text-xl font-black mb-4 uppercase tracking-tight italic">{title}</h3>
+//       <p className="text-sm text-white/40 leading-relaxed font-medium">{desc}</p>
+//     </motion.div>
+//   );
+// }
