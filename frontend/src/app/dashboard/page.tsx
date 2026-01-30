@@ -16,7 +16,7 @@ import Link from "next/link";
 
 export default function Dashboard() {
     return (
-        <div className="min-h-screen bg-[#050505] text-white p-6 pt-12">
+        <div className="min-h-screen bg-[#050505] text-white p-8 lg:p-12">
             <div className="max-w-7xl mx-auto space-y-12">
                 {/* Dashboard Header */}
                 <motion.header
