@@ -246,28 +246,3 @@ function ActionCard({ title, description, icon, color, onClick }: { title: strin
     </motion.button>
   );
 }
-
-// function TechCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0, y: 20 }}
-//       whileInView={{ opacity: 1, y: 0 }}
-//       viewport={{ once: true }}
-//       className="relative p-10 rounded-[2.5rem] cyber-glass border border-white/5 hover:border-white/20 transition-all group overflow-hidden"
-//     >
-//       <BorderBeam
-//         size={60}
-//         duration={6}
-//         colorFrom="#00f2fe"
-//         colorTo="#9b41ff"
-//         beamBorderRadius={40}
-//         delay={Math.random() * 3}
-//       />
-//       <div className="mb-8 p-5 rounded-2xl bg-white/5 inline-block group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
-//         {icon}
-//       </div>
-//       <h3 className="text-xl font-black mb-4 uppercase tracking-tight italic">{title}</h3>
-//       <p className="text-sm text-white/40 leading-relaxed font-medium">{desc}</p>
-//     </motion.div>
-//   );
-// }
