@@ -97,15 +97,26 @@ export default function Dashboard() {
 
             if (isAutoPilot) {
                 // In Auto-Pilot, navigate immediately and let background handle data
-                sentimentPromise.then(setSentimentData).catch(console.error);
-                reelPromise.then(setReelData).catch(console.error);
+                console.log("[TIME] Launching Auto-Pilot Analysis...");
+                const start = Date.now();
+                sentimentPromise.then(res => {
+                    console.log(`[TIME] Sentiment Analysis (Background) completed in ${((Date.now() - start) / 1000).toFixed(2)}s`);
+                    setSentimentData(res);
+                }).catch(console.error);
+                reelPromise.then(res => {
+                    console.log(`[TIME] Reel Analysis (Background) completed in ${((Date.now() - start) / 1000).toFixed(2)}s`);
+                    setReelData(res as any);
+                }).catch(console.error);
                 router.push("/sentiment-analysis");
             } else {
                 // In manual mode, wait for completion to show "Done" on dashboard
+                console.log("[TIME] Starting Manual Analysis...");
+                const start = Date.now();
                 const [sentiment, reel] = await Promise.all([
                     sentimentPromise,
                     reelPromise
                 ]);
+                console.log(`[TIME] Total Parallel Analysis took ${((Date.now() - start) / 1000).toFixed(2)}s`);
                 setSentimentData(sentiment);
                 setReelData(reel as any);
                 setIsDone(true);

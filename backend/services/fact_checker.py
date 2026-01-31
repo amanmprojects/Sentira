@@ -55,11 +55,14 @@ class FactChecker:
         )
 
         try:
+            import time
+            start = time.time()
             response = self.client.models.generate_content(
                 model=self.current_model,
                 contents=prompt,
                 config=config,
             )
+            print(f"DEBUG: [TIME] fact_check_claims Gemini call took {time.time() - start:.2f}s")
             return self._parse_fact_check_response(response)
         except Exception as e:
             return self._create_fallback_report(transcript, analysis_summary, str(e))

@@ -49,7 +49,7 @@ def _generate_seismograph_arrays(
 async def _extract_character_frames(
     analysis: EnhancedReelAnalysis, video_path: str
 ) -> EnhancedReelAnalysis:
-    """Extract frame images for characters with timestamps from video (PARALLEL)."""
+    """Extract frame images for characters with timestamps from video (SEQUENTIAL)."""
     if not analysis.characters or not os.path.exists(video_path):
         return analysis
 
@@ -65,19 +65,24 @@ async def _extract_character_frames(
             cap.release()
             return analysis
 
-        # Extract frames PARALLELY
-        async def extract_frame_for_char(char: Character) -> Character:
-            if char.timestamp is None:
-                return char
+        # SEQUENTIAL EXTRACTION (MUCH FASTER than random seeking)
+        import time
+        extractions_start = time.time()
+        
+        # Sort characters by timestamp to minimize seeking overhead
+        chars_to_process = [c for c in analysis.characters if c.timestamp is not None]
+        chars_to_process.sort(key=lambda x: x.timestamp)
 
+        for char in chars_to_process:
             try:
                 frame_num = int(char.timestamp * vid_fps)
+                # Moving forward is generally faster than jumping around
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
                 ret, frame = cap.read()
                 if not ret:
-                    return char
+                    continue
 
-                # Resize to 500px (good balance between quality and speed)
+                # Resize to 500px 
                 height, width = frame.shape[:2]
                 max_dim = 500
                 if width > height:
@@ -87,25 +92,18 @@ async def _extract_character_frames(
                     new_height = max_dim
                     new_width = int(width * (height / max_dim))
 
-                frame_resized = cv2.resize(
-                    frame, (new_width, new_height), interpolation=cv2.INTER_LANCZOS4
-                )
+                # Use AREA for shrinking (faster/better for downsizing)
+                frame_resized = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
 
                 # 85% quality (good balance)
                 _, buffer = cv2.imencode(
                     ".jpg", frame_resized, [cv2.IMWRITE_JPEG_QUALITY, 85]
                 )
                 char.frame_image_b64 = base64.b64encode(buffer).decode("utf-8")
-                return char
             except Exception as e:
                 print(f"Failed to extract frame for char at {char.timestamp}s: {e}")
-                return char
 
-        # Run all extractions in parallel
-        analysis.characters = await asyncio.gather(
-            *[extract_frame_for_char(char) for char in analysis.characters]
-        )
-
+        print(f"DEBUG: [TIME] Sequential extraction took {time.time() - extractions_start:.2f}s")
         cap.release()
         return analysis
 

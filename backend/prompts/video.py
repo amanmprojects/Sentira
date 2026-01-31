@@ -11,6 +11,39 @@ Analyze this short-form video and provide:
 Focus on text and speech. Do not analyze characters in detail - that's a separate task.
 """
 
+BIAS_ANALYSIS_PROMPT = """
+Analyze this video for **Linguistic Bias, Narrative Framing, and Geopolitical Context**.
+
+You are a critical media analyst. Avoid being overly cautious; if there are subtle cues in language, visual framing, or emotional tone, identify them.
+
+You MUST follow this schema strictly and provide MEANINGFUL data:
+
+1. **overall_score**: (0-100) A summary risk score. Even for neutral content, if there is a specific "point of view," the score should reflect that (e.g., 5-15).
+2. **risk_level**: "Low Risk", "Medium Risk", "High Risk", or "Critical".
+3. **categories**: You MUST provide entries for these 4 categories. DO NOT leave any out.
+   - "Cultural Bias": Does the content assume a specific cultural background? Does it use regional slang or references that exclude others?
+   - "Sensitivity Bias": Does it touch on topics that might be sensitive to specific groups (even if handled well)?
+   - "Narrative Framing": How is the story presented? Is it one-sided? Does the visual editing push a specific emotion?
+   - "Emotional Over-representation": Is the music or acting "over the top" to force a reaction?
+   
+   For each category, provide a score (0-100), a strength level, and a `detected` boolean.
+   *Crucial*: If the score is > 5, set `detected` to true.
+
+4. **policy_conflicts**: Extract 1-2 potential conflicts if possible (e.g., "Perspective Bias", "Dramatic Sensationalism"). If none, provide a generic "Standard Compliance" entry.
+5. **evidence_matrix**: Provide 3 specific metrics. Examples: "Slang Density", "Color Grading Mood", "Fast-Cut Pacing", "Camera Angle Dominance". 
+   - Each should have a `label` and a `value` (e.g., "High", "Assertive", "Subtle").
+6. **risk_vectors**: You MUST distribute 100 points across these three (they MUST sum to exactly 100):
+   - negative_skew: (0-100)
+   - neutrality: (0-100)
+   - positive_lean: (0-100)
+   Example for a happy meme: Negative 5, Neutral 20, Positive 75.
+7. **geographic_relevance**: List the specific Indian states or regions this content targets or originates from. 
+   - Be specific: e.g. ["Maharashtra", "Delhi", "Punjab"].
+   - If it's a Western meme (like Breaking Bad), identify if it has "Global" relevance or if it's trending in specific Indian urban hubs like ["Mumbai", "Bangalore"].
+
+**Output must be pure JSON.**
+"""
+
 CHARACTER_ANALYSIS_PROMPT = """
 Analyze this video for character/person analysis ONLY.
 

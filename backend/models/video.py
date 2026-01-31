@@ -1,17 +1,95 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from routes.fact_check import FactCheckReport
+from typing import Literal
+
+
+class BiasMetric(BaseModel):
+    """Specific bias metric with score and details."""
+
+    label: str = Field(
+        description="Name of the bias category (e.g., Cultural Bias, Narrative Framing)"
+    )
+    score: float = Field(
+        description="Bias score 0-100 where 100 is extreme bias", ge=0.0, le=100.0
+    )
+    strength: Literal["Low", "Medium", "High", "Critical"] = Field(
+        description="Qualitative strength rating"
+    )
+    description: str = Field(
+        description="Brief explanation of why this score was assigned"
+    )
+    detected: bool = Field(description="Whether this bias is actively detected/present")
+
+
+class PolicyConflict(BaseModel):
+    category: str = Field(
+        description="Conflict category e.g., 'Emotional Manipulation', 'Sensitivity Violation'"
+    )
+    level: str = Field(
+        description="Severity level e.g., 'High Risk', 'Clear', 'Potential'"
+    )
+    description: str = Field(description="Detailed explanation of the conflict")
+
+
+class EvidenceMetric(BaseModel):
+    label: str = Field(
+        description="Metric name e.g., 'Language Saturation', 'Visual Framing'"
+    )
+    value: str = Field(
+        description="Qualitative value e.g., 'Heavily Loaded', 'Perspective-Locked'"
+    )
+
+
+class RiskVectors(BaseModel):
+    negative_skew: float = Field(
+        description="Percentage of negative sentiment skew (0-100)"
+    )
+    neutrality: float = Field(description="Percentage of neutrality (0-100)")
+    positive_lean: float = Field(description="Percentage of positive lean (0-100)")
+
+
+class BiasAnalysis(BaseModel):
+    """Comprehensive bias analysis of the content."""
+
+    overall_score: float = Field(
+        description="Aggregate bias risk score 0.0-100.0", ge=0.0, le=100.0
+    )
+    risk_level: Literal["Low Risk", "Medium Risk", "High Risk", "Critical"] = Field(
+        description="Overall risk classification"
+    )
+    categories: List[BiasMetric] = Field(
+        description="Detailed breakdown of bias categories"
+    )
+    policy_conflicts: List[PolicyConflict] = Field(
+        description="Detected policy conflicts", default_factory=list
+    )
+    evidence_matrix: List[EvidenceMetric] = Field(
+        description="Key evidence metrics", default_factory=list
+    )
+    risk_vectors: Optional[RiskVectors] = Field(
+        description="Sentiment distribution risk vectors", default=None
+    )
+    geographic_relevance: List[str] = Field(
+        description="List of Indian states/territories relevant to the content",
+        default_factory=list,
+    )
+
 
 class VideoAnalysis(BaseModel):
     """Simplified video content analysis with just a summary."""
+
     summary: str = Field(
         description="Detailed 3-4 sentence summary of the video content, including main message and context."
     )
 
+
 # ==================== Structured Reel Analysis Models ====================
+
 
 class Character(BaseModel):
     """A character/person detected in the video."""
+
     gender: Optional[str] = Field(
         default=None,
         description="Perceived gender of the character (male, female, or non-binary). If unclear, say 'Unknown'.",
@@ -45,8 +123,10 @@ class Character(BaseModel):
         description="Base64-encoded image frame captured at the timestamp showing this character.",
     )
 
+
 class ReelAnalysis(BaseModel):
     """Structured analysis of a short-form social media video (reel)."""
+
     main_summary: str = Field(
         description="A concise summary of the video's main topic or message in 2-3 sentences."
     )
@@ -70,8 +150,10 @@ class ReelAnalysis(BaseModel):
         description="Suggestions or observations about the content (e.g., context needed, fact-check recommendations, content warnings).",
     )
 
+
 class EnhancedReelAnalysis(BaseModel):
     """Extended reel analysis with fact-checking using Google Search."""
+
     main_summary: str = Field(
         description="A concise summary of the video's main topic or message in 2-3 sentences."
     )
@@ -103,14 +185,20 @@ class EnhancedReelAnalysis(BaseModel):
         description="Overall truthfulness score (0-1) from fact-checking. 1.0 means fully true.",
     )
     analysis_timestamp: Optional[float] = Field(
-        default=None,
-        description="Timestamp of the analysis for cache verification.",
+        default=None, description="Timestamp of the analysis for cache verification."
     )
+    bias_analysis: Optional[BiasAnalysis] = Field(
+        default=None,
+        description="Bias analysis with categories, risk levels, and evidence metrics.",
+    )
+
 
 # ==================== Split Analysis Models for Faster Processing ====================
 
+
 class TranscriptAnalysis(BaseModel):
     """Fast transcript and summary analysis (text-focused)."""
+
     transcript: Optional[str] = Field(
         default=None,
         description="Full transcription of all speech with timestamp markers [MM:SS].",
@@ -126,8 +214,10 @@ class TranscriptAnalysis(BaseModel):
         description="Content violations (racism, hate speech, etc.).",
     )
 
+
 class CharacterAttributes(BaseModel):
     """Character attributes from vision analysis."""
+
     gender: Optional[str] = None
     race: Optional[str] = None
     tone: Optional[str] = None
@@ -137,15 +227,19 @@ class CharacterAttributes(BaseModel):
     timestamp: Optional[float] = None
     frame_image_b64: Optional[str] = None
 
+
 class CharacterAnalysis(BaseModel):
     """Character analysis from video (vision-focused)."""
+
     characters: List[CharacterAttributes] = Field(
         default_factory=list,
         description="List of characters with their attributes.",
     )
 
+
 class EmotionSegment(BaseModel):
     """An emotion segment in the timeline."""
+
     emotion: str = Field(
         description="Emotion name: Anger, Disgust, Horror, Humor, Sadness, or Surprise"
     )
@@ -153,8 +247,10 @@ class EmotionSegment(BaseModel):
     end: float = Field(description="End time in seconds")
     intensity: float = Field(description="Emotion intensity 0.0-1.0", ge=0.0, le=1.0)
 
+
 class CharacterEmotion(BaseModel):
     """Character emotion data."""
+
     id: str = Field(description="Character ID")
     name: str = Field(description="Character name")
     dominant_emotion: str = Field(
@@ -165,8 +261,10 @@ class CharacterEmotion(BaseModel):
         description="Percentage of screen time 0.0-100.0", ge=0.0, le=100.0
     )
 
+
 class EmotionSeismograph(BaseModel):
     """Seismograph data with intensity arrays for each emotion."""
+
     Anger: List[float] = Field(
         default_factory=list, description="Anger intensity array"
     )
@@ -186,8 +284,10 @@ class EmotionSeismograph(BaseModel):
         default_factory=list, description="Surprise intensity array"
     )
 
+
 class SentimentAnalysis(BaseModel):
     """Emotion and sentiment analysis from video."""
+
     emotion_timeline: List[EmotionSegment] = Field(
         description="List of emotion segments with time and intensity",
     )
@@ -205,8 +305,10 @@ class SentimentAnalysis(BaseModel):
         description="Analysis confidence 0.0-1.0", ge=0.0, le=1.0
     )
 
+
 class TemporalEmotionAnalysis(BaseModel):
     """Emotion timeline and seismograph from specialized temporal analysis."""
+
     emotion_timeline: List[EmotionSegment] = Field(
         description="List of 1-second emotion segments with {emotion, start, end, intensity}"
     )
@@ -214,8 +316,10 @@ class TemporalEmotionAnalysis(BaseModel):
         description="6 arrays with intensity values. Array index = time in seconds. Array length = video duration."
     )
 
+
 class CharacterGlobalAnalysis(BaseModel):
     """Character emotions and overall sentiment from specialized global analysis."""
+
     character_emotions: List[CharacterEmotion] = Field(
         description="Per-character emotion data with {id, name, dominant_emotion, volatility, screen_time}"
     )
@@ -223,15 +327,17 @@ class CharacterGlobalAnalysis(BaseModel):
         description="Overall sentiment: Positive/Alert, Negative/Concerning, or Neutral/Mixed"
     )
     confidence_score: float = Field(
-        ge=0.0,
-        le=1.0,
-        description="Analysis confidence score 0.0-1.0"
+        ge=0.0, le=1.0, description="Analysis confidence score 0.0-1.0"
     )
+
 
 class ReelAnalysisRequest(BaseModel):
     """Request body for reel analysis."""
+
     post_url: str = Field(description="The Instagram reel/post URL to analyze.")
+
 
 class YouTubeAnalysisRequest(BaseModel):
     """Request body for YouTube video analysis."""
+
     video_url: str = Field(description="The YouTube video or Shorts URL to analyze.")

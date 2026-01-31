@@ -38,11 +38,47 @@ export interface FactCheckReport {
     analysis_timestamp?: string;
 }
 
+export interface BiasMetric {
+    label: string;
+    score: number;
+    strength: "Low" | "Medium" | "High" | "Critical";
+    description: string;
+    detected: boolean;
+}
+
+export interface PolicyConflict {
+    category: string;
+    level: string;
+    description: string;
+}
+
+export interface EvidenceMetric {
+    label: string;
+    value: string;
+}
+
+export interface RiskVectors {
+    negative_skew: number;
+    neutrality: number;
+    positive_lean: number;
+}
+
+export interface BiasAnalysis {
+    overall_score: number;
+    risk_level: "Low Risk" | "Medium Risk" | "High Risk" | "Critical";
+    categories: BiasMetric[];
+    policy_conflicts?: PolicyConflict[];
+    evidence_matrix?: EvidenceMetric[];
+    risk_vectors?: RiskVectors;
+    geographic_relevance?: string[];
+}
+
 export interface EnhancedReelAnalysis {
     main_summary: string;
     characters: Character[];
     commentary_summary: string;
     possible_issues: string[];
+    bias_analysis?: BiasAnalysis;
     transcript?: string;
     suggestions: string[];
     fact_check_report?: FactCheckReport;

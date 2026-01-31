@@ -20,7 +20,7 @@ const STATE_BIAS_DATA: Record<string, { bias: number; sentiment: "high" | "mediu
     "West Bengal": { bias: 82, sentiment: "high", hotspots: 3 },
     "Maharashtra": { bias: 78, sentiment: "high", hotspots: 4 },
     "Delhi": { bias: 92, sentiment: "high", hotspots: 6 },
-    
+
     // Medium bias states (orange/cyan zones)
     "Rajasthan": { bias: 65, sentiment: "medium", hotspots: 2 },
     "Madhya Pradesh": { bias: 58, sentiment: "medium", hotspots: 2 },
@@ -32,7 +32,7 @@ const STATE_BIAS_DATA: Record<string, { bias: number; sentiment: "high" | "mediu
     "Punjab": { bias: 68, sentiment: "medium", hotspots: 2 },
     "Haryana": { bias: 72, sentiment: "medium", hotspots: 3 },
     "Odisha": { bias: 45, sentiment: "medium", hotspots: 1 },
-    
+
     // Low bias states (green zones)
     "Kerala": { bias: 22, sentiment: "low", hotspots: 0 },
     "Himachal Pradesh": { bias: 18, sentiment: "low", hotspots: 0 },
@@ -67,41 +67,47 @@ const HOTSPOT_MARKERS = [
 interface IndiaMapProps {
     onStateHover?: (stateName: string | null, data: typeof STATE_BIAS_DATA[string] | null) => void;
     selectedState?: string | null;
+    highlightedStates?: string[];
 }
 
-function IndiaMap({ onStateHover, selectedState }: IndiaMapProps) {
+function IndiaMap({ onStateHover, selectedState, highlightedStates = [] }: IndiaMapProps) {
     const [hoveredState, setHoveredState] = useState<string | null>(null);
     const [tooltipContent, setTooltipContent] = useState<{ name: string; bias: number; x: number; y: number } | null>(null);
 
     const getStateColor = (stateName: string, isHovered: boolean) => {
+        // AI Detected Relevance - High priority vibrant color
+        if (highlightedStates.some(s => s.toLowerCase() === stateName.toLowerCase())) {
+            return isHovered ? "rgba(255, 0, 128, 0.9)" : "rgba(255, 0, 128, 0.7)";
+        }
+
         const data = STATE_BIAS_DATA[stateName];
-        if (!data) return isHovered ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)";
-        
+        if (!data) return isHovered ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.03)";
+
         const bias = data.bias;
-        
+
+        // Mute the default mock colors to let AI highlights POP
         if (bias >= 75) {
-            // High bias - red/rose gradient
-            return isHovered ? "rgba(255, 0, 128, 0.6)" : "rgba(255, 0, 128, 0.35)";
+            return isHovered ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.1)";
         } else if (bias >= 50) {
-            // Medium bias - cyan gradient
-            return isHovered ? "rgba(0, 242, 254, 0.5)" : "rgba(0, 242, 254, 0.25)";
+            return isHovered ? "rgba(0, 242, 254, 0.3)" : "rgba(0, 242, 254, 0.15)";
         } else if (bias >= 30) {
-            // Low-medium - blue gradient
-            return isHovered ? "rgba(79, 172, 254, 0.4)" : "rgba(79, 172, 254, 0.2)";
+            return isHovered ? "rgba(79, 172, 254, 0.2)" : "rgba(79, 172, 254, 0.1)";
         } else {
-            // Low bias - green/neutral
-            return isHovered ? "rgba(0, 230, 118, 0.4)" : "rgba(0, 230, 118, 0.15)";
+            return isHovered ? "rgba(0, 230, 118, 0.2)" : "rgba(0, 230, 118, 0.05)";
         }
     };
 
     const getStrokeColor = (stateName: string) => {
+        if (highlightedStates.some(s => s.toLowerCase() === stateName.toLowerCase())) {
+            return "#ff0080";
+        }
+
         const data = STATE_BIAS_DATA[stateName];
-        if (!data) return "rgba(255,255,255,0.1)";
-        
-        if (data.bias >= 75) return "rgba(255, 0, 128, 0.8)";
-        if (data.bias >= 50) return "rgba(0, 242, 254, 0.6)";
-        if (data.bias >= 30) return "rgba(79, 172, 254, 0.5)";
-        return "rgba(0, 230, 118, 0.4)";
+        if (!data) return "rgba(255,255,255,0.05)";
+
+        if (data.bias >= 75) return "rgba(255, 255, 255, 0.2)";
+        if (data.bias >= 50) return "rgba(0, 242, 254, 0.3)";
+        return "rgba(255, 255, 255, 0.1)";
     };
 
     const handleMouseEnter = (geo: any, evt: React.MouseEvent) => {
@@ -144,7 +150,7 @@ function IndiaMap({ onStateHover, selectedState }: IndiaMapProps) {
                             geographies.map((geo) => {
                                 const stateName = geo.properties.NAME_1 || geo.properties.name || geo.properties.NAME;
                                 const isHovered = hoveredState === stateName;
-                                
+
                                 return (
                                     <Geography
                                         key={geo.rsmKey}
@@ -179,16 +185,16 @@ function IndiaMap({ onStateHover, selectedState }: IndiaMapProps) {
                         }
                     </Geographies>
 
-                    {/* Hotspot Markers */}
-                    {HOTSPOT_MARKERS.map((marker) => (
+                    {/* Hotspot Markers - REMOVED */}
+                    {/* {HOTSPOT_MARKERS.map((marker) => (
                         <Marker key={marker.name} coordinates={marker.coordinates as [number, number]}>
                             <motion.circle
                                 r={marker.intensity === "critical" ? 6 : marker.intensity === "high" ? 5 : 4}
                                 fill={
-                                    marker.intensity === "critical" 
-                                        ? "#ff0080" 
-                                        : marker.intensity === "high" 
-                                            ? "#ff4444" 
+                                    marker.intensity === "critical"
+                                        ? "#ff0080"
+                                        : marker.intensity === "high"
+                                            ? "#ff4444"
                                             : "#00f2fe"
                                 }
                                 fillOpacity={0.8}
@@ -202,15 +208,14 @@ function IndiaMap({ onStateHover, selectedState }: IndiaMapProps) {
                                     ease: "easeInOut",
                                 }}
                             />
-                            {/* Pulse effect */}
                             <motion.circle
                                 r={marker.intensity === "critical" ? 12 : marker.intensity === "high" ? 10 : 8}
                                 fill="none"
                                 stroke={
-                                    marker.intensity === "critical" 
-                                        ? "#ff0080" 
-                                        : marker.intensity === "high" 
-                                            ? "#ff4444" 
+                                    marker.intensity === "critical"
+                                        ? "#ff0080"
+                                        : marker.intensity === "high"
+                                            ? "#ff4444"
                                             : "#00f2fe"
                                 }
                                 strokeWidth={2}
@@ -223,7 +228,7 @@ function IndiaMap({ onStateHover, selectedState }: IndiaMapProps) {
                                 }}
                             />
                         </Marker>
-                    ))}
+                    ))} */}
                 </ZoomableGroup>
             </ComposableMap>
 
@@ -243,16 +248,14 @@ function IndiaMap({ onStateHover, selectedState }: IndiaMapProps) {
                             {tooltipContent.name}
                         </p>
                         <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                                tooltipContent.bias >= 75 ? 'bg-aurora-rose' :
+                            <div className={`w-2 h-2 rounded-full ${tooltipContent.bias >= 75 ? 'bg-aurora-rose' :
                                 tooltipContent.bias >= 50 ? 'bg-aurora-cyan' :
-                                tooltipContent.bias >= 30 ? 'bg-aurora-blue' : 'bg-emerald-400'
-                            }`} />
-                            <span className={`text-sm font-bold ${
-                                tooltipContent.bias >= 75 ? 'text-aurora-rose' :
+                                    tooltipContent.bias >= 30 ? 'bg-aurora-blue' : 'bg-emerald-400'
+                                }`} />
+                            <span className={`text-sm font-bold ${tooltipContent.bias >= 75 ? 'text-aurora-rose' :
                                 tooltipContent.bias >= 50 ? 'text-aurora-cyan' :
-                                tooltipContent.bias >= 30 ? 'text-aurora-blue' : 'text-emerald-400'
-                            }`}>
+                                    tooltipContent.bias >= 30 ? 'text-aurora-blue' : 'text-emerald-400'
+                                }`}>
                                 {tooltipContent.bias}% Bias
                             </span>
                         </div>

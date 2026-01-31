@@ -12,6 +12,7 @@ if not api_key:
     raise ValueError("GEMINI_API_KEY environment variable is not set")
 
 model = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
+bias_model = os.getenv("GEMINI_BIAS_MODEL", "gemini-3-pro-preview")
 
 client = genai.Client(api_key=api_key)
 

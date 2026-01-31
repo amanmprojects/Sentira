@@ -42,15 +42,15 @@ export const EMOTION_DISTRIBUTION = [
 ] as const;
 
 export const PROTOCOL_CONFLICTS = [
-    { 
-        category: "Emotional Manipulation", 
-        level: "High Risk", 
-        desc: "Frequent use of horror-based facial markers in an educational/informational setting." 
+    {
+        category: "Emotional Manipulation",
+        level: "High Risk",
+        desc: "Frequent use of horror-based facial markers in an educational/informational setting."
     },
-    { 
-        category: "Sensitivity Violation", 
-        level: "Clear", 
-        desc: "References to culturally specific identifiers without proper contextual neutralizers." 
+    {
+        category: "Sensitivity Violation",
+        level: "Clear",
+        desc: "References to culturally specific identifiers without proper contextual neutralizers."
     }
 ] as const;
 
@@ -63,7 +63,16 @@ export const REGIONAL_SUMMARY = [
     { name: "Northeast", bias: 25, trend: "down" as const, states: ["Assam", "Meghalaya", "Manipur"] },
 ] as const;
 
-export type BiasCategory = typeof BIAS_CATEGORIES[number];
+export interface BiasCategory {
+    id: string;
+    label: string;
+    status: string;
+    strength: "Low" | "Medium" | "High" | "Critical";
+    percent: number;
+    desc: string;
+}
+
+// export type BiasCategory = typeof BIAS_CATEGORIES[number];
 export type EmotionDistribution = typeof EMOTION_DISTRIBUTION[number];
 export type ProtocolConflict = typeof PROTOCOL_CONFLICTS[number];
 export type RegionalSummary = typeof REGIONAL_SUMMARY[number];
