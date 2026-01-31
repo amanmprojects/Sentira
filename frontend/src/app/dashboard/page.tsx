@@ -18,7 +18,7 @@ import {
     Zap
 } from "lucide-react";
 import { useAnalysis, InputModality } from "@/context/AnalysisContext";
-import { analyzeSentiment, analyzeSentimentUpload, analyzeVideoUrl, analyzeVideo } from "@/lib/api";
+import { analyzeSentiment, analyzeSentimentUpload, analyzeVideoUrl, analyzeVideo, analyzeReelUpload } from "@/lib/api";
 
 const MODALITY_OPTIONS: { id: InputModality; label: string; icon: React.ReactNode; description: string }[] = [
     { id: "video", label: "Video", icon: <Video size={20} />, description: "Instagram URL or upload" },
@@ -92,7 +92,7 @@ export default function Dashboard() {
                 : analyzeSentiment(input.content);
 
             const reelPromise = input.file
-                ? analyzeVideo(input.file).then(res => ({ main_summary: res.summary, commentary_summary: res.summary, possible_issues: [], transcript: "", suggestions: [], characters: [] }))
+                ? analyzeReelUpload(input.file)
                 : analyzeVideoUrl(input.content).then(res => res.data);
 
             if (isAutoPilot) {
@@ -101,10 +101,13 @@ export default function Dashboard() {
                 const start = Date.now();
                 sentimentPromise.then(res => {
                     console.log(`[TIME] Sentiment Analysis (Background) completed in ${((Date.now() - start) / 1000).toFixed(2)}s`);
+                    console.log("[DASHBOARD] sentiment data:", res);
                     setSentimentData(res);
                 }).catch(console.error);
                 reelPromise.then(res => {
                     console.log(`[TIME] Reel Analysis (Background) completed in ${((Date.now() - start) / 1000).toFixed(2)}s`);
+                    console.log("[DASHBOARD] reel data:", res);
+                    console.log("[DASHBOARD] reel data bias_analysis:", res?.bias_analysis);
                     setReelData(res as any);
                 }).catch(console.error);
                 router.push("/sentiment-analysis");

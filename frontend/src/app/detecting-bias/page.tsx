@@ -38,8 +38,11 @@ export default function DetectingBiasPage() {
     const [riskLevel, setRiskLevel] = useState("Unknown");
 
     useEffect(() => {
+        console.log("[BIAS PAGE] useEffect triggered, reelData:", reelData);
         if (reelData) {
             const analysis = reelData.bias_analysis;
+            console.log("[BIAS PAGE] bias_analysis:", analysis);
+            console.log("[BIAS PAGE] analysis?.categories:", analysis?.categories);
 
             // Define default categories that should always appear
             const defaultCategories = [

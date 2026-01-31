@@ -482,13 +482,176 @@ TRANSCRIPT:
                 pass
 
 
-@router.post("/youtube", response_model=EnhancedReelAnalysis)
-async def analyze_youtube(
-    request: YouTubeAnalysisRequest, enable_fact_check: bool = True
+@router.post("/reel/upload", response_model=EnhancedReelAnalysis)
+async def analyze_uploaded_reel(
+    video: UploadFile = File(...), enable_fact_check: bool = True
 ):
-    """Analyze a YouTube video by URL."""
+    """Analyze an uploaded video file with full bias analysis (like /reel endpoint)."""
+    if not video.filename.lower().endswith((".mp4", ".mov", ".webm", ".avi")):
+        raise HTTPException(status_code=400, detail="Invalid video file format")
+
+    temp_file_path = f"temp_reel_upload_{uuid.uuid4().hex}_{video.filename}"
     myfile = None
-    temp_file_path = None
+
+    try:
+        print(f"DEBUG: [UPLOAD] Reading uploaded file: {video.filename}")
+        with open(temp_file_path, "wb") as f:
+            f.write(await video.read())
+        print(f"DEBUG: [UPLOAD] File saved to: {temp_file_path}")
+
+        start_time = time.time()
+        upload_start = time.time()
+        myfile = client.files.upload(file=temp_file_path)
+        print(f"DEBUG: [TIME] Upload took {time.time() - upload_start:.2f}s")
+
+        processing_start = time.time()
+        while myfile.state == "PROCESSING":
+            await asyncio.sleep(1)
+            myfile = client.files.get(name=myfile.name)
+        print(
+            f"DEBUG: [TIME] Gemini file processing wait took {time.time() - processing_start:.2f}s"
+        )
+
+        if myfile.state != "ACTIVE":
+            raise HTTPException(
+                status_code=500, detail=f"Gemini processing failed: {myfile.state}"
+            )
+
+        print(f"DEBUG: Starting Analysis for uploaded file: {video.filename}")
+        print(f"DEBUG: [BIAS ANALYSIS] Using model: {bias_model}")
+
+        async def analyze_transcript_faster() -> TranscriptAnalysis:
+            sub_step_start = time.time()
+            print(f"DEBUG: [TRANSCRIPT] Starting transcript analysis")
+            response = await client.aio.models.generate_content(
+                model=model,
+                contents=[myfile, TRANSCRIPT_ANALYSIS_PROMPT],
+                config={
+                    "response_mime_type": "application/json",
+                    "response_schema": TranscriptAnalysis,
+                },
+            )
+            print(
+                f"DEBUG: [TIME] analyze_transcript_faster took {time.time() - sub_step_start:.2f}s"
+            )
+            return TranscriptAnalysis.model_validate_json(response.text)
+
+        async def analyze_characters_faster() -> CharacterAnalysis:
+            sub_step_start = time.time()
+            print(f"DEBUG: [CHARACTERS] Starting character analysis")
+            response = await client.aio.models.generate_content(
+                model=model,
+                contents=[myfile, CHARACTER_ANALYSIS_PROMPT],
+                config={
+                    "response_mime_type": "application/json",
+                    "response_schema": CharacterAnalysis,
+                },
+            )
+            print(
+                f"DEBUG: [TIME] analyze_characters_faster took {time.time() - sub_step_start:.2f}s"
+            )
+            return CharacterAnalysis.model_validate_json(response.text)
+
+        async def analyze_bias_faster() -> BiasAnalysis:
+            sub_step_start = time.time()
+            print(f"DEBUG: [BIAS ANALYSIS] Starting bias analysis")
+            response = await client.aio.models.generate_content(
+                model=bias_model,
+                contents=[myfile, BIAS_ANALYSIS_PROMPT],
+                config={
+                    "response_mime_type": "application/json",
+                    "response_schema": BiasAnalysis,
+                },
+            )
+            print(
+                f"DEBUG: [TIME] analyze_bias_faster took {time.time() - sub_step_start:.2f}s"
+            )
+            result = BiasAnalysis.model_validate_json(response.text)
+            print(
+                f"DEBUG: [BIAS ANALYSIS] Validated - overall_score: {result.overall_score}"
+            )
+            return result
+
+        analysis_start = time.time()
+        transcript_result, character_result, bias_result = await asyncio.gather(
+            analyze_transcript_faster(),
+            analyze_characters_faster(),
+            analyze_bias_faster(),
+        )
+        print(
+            f"DEBUG: [TIME] Parallel analysis calls took {time.time() - analysis_start:.2f}s (TRUE ASYNC)"
+        )
+        print(f"DEBUG: Analysis results received for uploaded file.")
+
+        analysis = EnhancedReelAnalysis(
+            main_summary=transcript_result.main_summary,
+            commentary_summary=transcript_result.commentary_summary,
+            possible_issues=transcript_result.possible_issues,
+            bias_analysis=bias_result,
+            transcript=transcript_result.transcript,
+            characters=[
+                Character(**attr.model_dump()) for attr in character_result.characters
+            ],
+            suggestions=[],
+            analysis_timestamp=time.time(),
+        )
+        print(f"DEBUG: EnhancedReelAnalysis object created successfully.")
+
+        frame_extraction_start = time.time()
+        analysis = await _extract_character_frames(analysis, temp_file_path)
+        print(
+            f"DEBUG: [TIME] Frame extraction took {time.time() - frame_extraction_start:.2f}s"
+        )
+
+        if enable_fact_check:
+            try:
+                fact_check_start = time.time()
+                fact_checker = FactChecker(client)
+                fact_check_report = fact_checker.fact_check_claims(
+                    transcript=analysis.transcript or "",
+                    analysis_summary=analysis.commentary_summary or "",
+                )
+                analysis.fact_check_report = fact_check_report
+                analysis.overall_truth_score = fact_check_report.overall_truth_score
+                print(
+                    f"DEBUG: [TIME] Fact-checking took {time.time() - fact_check_start:.2f}s"
+                )
+            except Exception as e:
+                print(f"Fact-checking failed: {e}")
+
+        misinformation_keywords = [
+            "misinformation",
+            "false claim",
+            "fake news",
+            "misleading claim",
+        ]
+        analysis.possible_issues = [
+            issue
+            for issue in analysis.possible_issues
+            if not any(kw in issue.lower() for kw in misinformation_keywords)
+        ]
+
+        print(
+            f"DEBUG: [TIME] TOTAL Upload Analysis took {time.time() - start_time:.2f}s"
+        )
+        return analysis
+
+    except Exception as e:
+        print(f"ERROR in analyze_uploaded_reel: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to analyze uploaded reel: {str(e)}"
+        )
+    finally:
+        if myfile:
+            try:
+                client.files.delete(name=myfile.name)
+            except:
+                pass
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+            except:
+                pass
 
     try:
         start_time = time.time()

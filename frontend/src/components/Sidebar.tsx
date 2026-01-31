@@ -12,7 +12,7 @@ import {
     FileText,
     Settings,
 } from "lucide-react";
-import { BorderBeam } from "./border-beam";
+
 import BrandIcon from "./BrandIcon";
 import { UserButton, SignOutButton } from "@clerk/nextjs";
 import { LogOut, Zap } from "lucide-react";
@@ -37,9 +37,6 @@ export default function Sidebar() {
 
     return (
         <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#030303]/80 backdrop-blur-2xl border-r border-white/5 z-50 flex flex-col p-6 overflow-hidden">
-            <div className="absolute inset-0 pointer-events-none">
-                <BorderBeam size={250} duration={8} delay={0} colorFrom="#00f2fe" colorTo="#ff0080" />
-            </div>
 
             {/* Branding - Click to go to Pulse (Dashboard) */}
             <Link href="/dashboard" className="flex items-center gap-3 py-6 mb-8 group relative z-10 hover:opacity-80 transition-opacity">

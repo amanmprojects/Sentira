@@ -219,6 +219,32 @@ export function detectVideoSource(url: string): VideoSourceType {
 }
 
 /**
+ * Analyze an uploaded video file with full analysis (including bias)
+ */
+export async function analyzeReelUpload(
+    file: File,
+    enableFactCheck: boolean = false
+): Promise<EnhancedReelAnalysis> {
+    const formData = new FormData();
+    formData.append('video', file);
+
+    const response = await fetch(
+        `${API_BASE_URL}/analyze-video/reel/upload?enable_fact_check=${enableFactCheck}`,
+        {
+            method: 'POST',
+            body: formData,
+        }
+    );
+
+    if (!response.ok) {
+        const error: ApiError = await response.json();
+        throw new Error(error.detail || 'Failed to analyze uploaded reel');
+    }
+
+    return response.json();
+}
+
+/**
  * Analyze an uploaded video file
  */
 export async function analyzeVideo(file: File): Promise<VideoAnalysis> {
