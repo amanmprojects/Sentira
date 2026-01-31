@@ -24,8 +24,8 @@ const NAV_ITEMS = [
     { icon: <Activity size={20} />, label: "Sentiment Analysis", href: "/sentiment-analysis" },
     { icon: <Scale size={20} />, label: "Detecting Bias", href: "/detecting-bias" },
     { icon: <CheckCircle size={20} />, label: "Fact Checking", href: "/fact-checking" },
-    { icon: <TrendingUp size={20} />, label: "Trend Analysis", href: "/trend-analysis" },
     { icon: <Compass size={20} />, label: "Browse", href: "/browse" },
+    { icon: <TrendingUp size={20} />, label: "Trend Analysis", href: "/trend-analysis" },
     { icon: <FileText size={20} />, label: "Reports", href: "/reports" },
     { icon: <Settings size={20} />, label: "Settings", href: "/settings" },
 ];
