@@ -196,32 +196,24 @@ async def analyze_reel(request: ReelAnalysisRequest, enable_fact_check: bool = F
         if cache_key not in UPLOAD_LOCKS:
             UPLOAD_LOCKS[cache_key] = asyncio.Lock()
 
-        async with UPLOAD_LOCKS[cache_key]:
-            if cache_key in UPLOAD_CACHE:
-                cached_file, expiry = UPLOAD_CACHE[cache_key]
-                if time.time() < expiry:
-                    print(f"DEBUG: [SPEED] Using cached Gemini File for {cache_key}")
-                    myfile = cached_file
-                else:
-                    del UPLOAD_CACHE[cache_key]
+        # DISABLE CACHING - causing 403 errors with expired Gemini files
+        # For better caching, implement at the data level, not at the file level
+        print(
+            f"DEBUG: [SPEED] Uploading new Gemini File (caching disabled to prevent 403 errors)"
+        )
+        upload_start = time.time()
+        myfile = client.files.upload(file=temp_file_path)
+        print(
+            f"DEBUG: [TIME] Gemini file upload took {time.time() - upload_start:.2f}s"
+        )
 
-            if not myfile:
-                upload_start = time.time()
-                myfile = client.files.upload(file=temp_file_path)
-                print(
-                    f"DEBUG: [TIME] Gemini file upload took {time.time() - upload_start:.2f}s"
-                )
-
-                processing_start = time.time()
-                while myfile.state == "PROCESSING":
-                    await asyncio.sleep(1)
-                    myfile = client.files.get(name=myfile.name)
-                print(
-                    f"DEBUG: [TIME] Gemini file processing wait took {time.time() - processing_start:.2f}s"
-                )
-
-                # Cache for 10 minutes
-                UPLOAD_CACHE[cache_key] = (myfile, time.time() + 600)
+        processing_start = time.time()
+        while myfile.state == "PROCESSING":
+            await asyncio.sleep(1)
+            myfile = client.files.get(name=myfile.name)
+        print(
+            f"DEBUG: [TIME] Gemini file processing wait took {time.time() - processing_start:.2f}s"
+        )
 
         if myfile.state != "ACTIVE":
             raise HTTPException(
@@ -468,6 +460,12 @@ TRANSCRIPT:
 
     except Exception as e:
         print(f"ERROR in analyze_reel: {str(e)}")
+        # Provide more helpful error message for cache-related issues
+        error_msg = str(e)
+        if "403" in error_msg or "PERMISSION_DENIED" in error_msg:
+            print(
+                "ERROR: Detected cache-related 403 error - check Gemini file caching logic"
+            )
         raise HTTPException(status_code=500, detail=f"Failed to analyze reel: {str(e)}")
     finally:
         if myfile:
@@ -923,32 +921,23 @@ async def _perform_full_sentiment_analysis(
         if cache_key not in UPLOAD_LOCKS:
             UPLOAD_LOCKS[cache_key] = asyncio.Lock()
 
-        async with UPLOAD_LOCKS[cache_key]:
-            if cache_key in UPLOAD_CACHE:
-                cached_file, expiry = UPLOAD_CACHE[cache_key]
-                if time.time() < expiry:
-                    print(
-                        f"DEBUG: [SPEED] Using cached Gemini File for sentiment {cache_key}"
-                    )
-                    myfile = cached_file
-                else:
-                    del UPLOAD_CACHE[cache_key]
+        # DISABLE CACHING - causing 403 errors with expired Gemini files
+        print(
+            f"DEBUG: [SPEED] Uploading new Gemini File for sentiment (caching disabled to prevent 403 errors)"
+        )
+        upload_op_start = time.time()
+        myfile = client.files.upload(file=temp_file_path)
+        print(
+            f"DEBUG: [TIME] Sentiment Gemini upload took {time.time() - upload_op_start:.2f}s"
+        )
 
-            if not myfile:
-                upload_op_start = time.time()
-                myfile = client.files.upload(file=temp_file_path)
-                print(
-                    f"DEBUG: [TIME] Sentiment Gemini upload took {time.time() - upload_op_start:.2f}s"
-                )
-
-                processing_start = time.time()
-                while myfile.state == "PROCESSING":
-                    await asyncio.sleep(1)
-                    myfile = client.files.get(name=myfile.name)
-                print(
-                    f"DEBUG: [TIME] Sentiment Gemini processing wait took {time.time() - processing_start:.2f}s"
-                )
-                UPLOAD_CACHE[cache_key] = (myfile, time.time() + 600)
+        processing_start = time.time()
+        while myfile.state == "PROCESSING":
+            await asyncio.sleep(1)
+            myfile = client.files.get(name=myfile.name)
+        print(
+            f"DEBUG: [TIME] Sentiment Gemini processing wait took {time.time() - processing_start:.2f}s"
+        )
 
         if myfile.state != "ACTIVE":
             raise HTTPException(

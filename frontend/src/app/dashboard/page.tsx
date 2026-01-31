@@ -12,13 +12,12 @@ import {
     Activity,
     Scale,
     CheckCircle,
-    ArrowRight,
     X,
     Loader2,
     Zap
 } from "lucide-react";
 import { useAnalysis, InputModality } from "@/context/AnalysisContext";
-import { analyzeSentiment, analyzeSentimentUpload, analyzeVideoUrl, analyzeVideo, analyzeReelUpload } from "@/lib/api";
+import { analyzeSentiment, analyzeSentimentUpload, analyzeVideoUrl, analyzeReelUpload, type EnhancedReelAnalysis } from "@/lib/api";
 
 const MODALITY_OPTIONS: { id: InputModality; label: string; icon: React.ReactNode; description: string }[] = [
     { id: "video", label: "Video", icon: <Video size={20} />, description: "Instagram URL or upload" },
@@ -43,14 +42,14 @@ const ACTION_CARDS = [
         href: "/detecting-bias",
         color: "rose",
     },
-    {
-        id: "factcheck",
-        title: "Fact Checking",
-        description: "Verify claims and generate validation reports",
-        icon: <CheckCircle size={24} />,
-        href: "/reports",
-        color: "blue",
-    },
+        {
+            id: "factcheck",
+            title: "Fact Checking",
+            description: "Verify claims and generate validation reports",
+            icon: <CheckCircle size={24} />,
+            href: "/fact-checking",
+            color: "blue",
+        },
 ];
 
 export default function Dashboard() {
@@ -58,7 +57,7 @@ export default function Dashboard() {
     const {
         input, setModality, setContent, setFile, isInputValid, clearInput,
         setSentimentData, setReelData, isAnalyzing, setIsAnalyzing,
-        isAutoPilot, setIsAutoPilot
+        isAutoPilot
     } = useAnalysis();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDone, setIsDone] = useState(false);
@@ -92,8 +91,8 @@ export default function Dashboard() {
                 : analyzeSentiment(input.content);
 
             const reelPromise = input.file
-                ? analyzeReelUpload(input.file)
-                : analyzeVideoUrl(input.content).then(res => res.data);
+                ? analyzeReelUpload(input.file, true)
+                : analyzeVideoUrl(input.content, true).then(res => res.data);
 
             if (isAutoPilot) {
                 // In Auto-Pilot, navigate immediately and let background handle data
@@ -108,7 +107,7 @@ export default function Dashboard() {
                     console.log(`[TIME] Reel Analysis (Background) completed in ${((Date.now() - start) / 1000).toFixed(2)}s`);
                     console.log("[DASHBOARD] reel data:", res);
                     console.log("[DASHBOARD] reel data bias_analysis:", res?.bias_analysis);
-                    setReelData(res as any);
+                    setReelData(res as EnhancedReelAnalysis);
                 }).catch(console.error);
                 router.push("/sentiment-analysis");
             } else {
@@ -121,7 +120,7 @@ export default function Dashboard() {
                 ]);
                 console.log(`[TIME] Total Parallel Analysis took ${((Date.now() - start) / 1000).toFixed(2)}s`);
                 setSentimentData(sentiment);
-                setReelData(reel as any);
+                setReelData(reel as EnhancedReelAnalysis);
                 setIsDone(true);
             }
         } catch (error) {
