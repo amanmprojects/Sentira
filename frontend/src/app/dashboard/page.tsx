@@ -42,14 +42,14 @@ const ACTION_CARDS = [
         href: "/detecting-bias",
         color: "rose",
     },
-        {
-            id: "factcheck",
-            title: "Fact Checking",
-            description: "Verify claims and generate validation reports",
-            icon: <CheckCircle size={24} />,
-            href: "/fact-checking",
-            color: "blue",
-        },
+    {
+        id: "factcheck",
+        title: "Fact Checking",
+        description: "Verify claims and generate validation reports",
+        icon: <CheckCircle size={24} />,
+        href: "/fact-checking",
+        color: "blue",
+    },
 ];
 
 export default function Dashboard() {
@@ -132,7 +132,7 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white p-4 lg:p-10">
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-8xl mx-auto space-y-6">
                 {/* Auto-Pilot Global Banner */}
                 <AnimatePresence>
                     {isAutoPilot && (

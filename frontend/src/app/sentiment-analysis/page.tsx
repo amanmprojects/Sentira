@@ -385,7 +385,7 @@ export default function SentimentAnalysisPage() {
                 Multimodal Extraction
               </span>
             </div>
-            <h1 className="text-4xl font-black uppercase tracking-tighter italic">
+            <h1 className="text-4xl font-black uppercase tracking-tighter">
               Sentiment <span className="aurora-text">Engine</span>
             </h1>
             {isAutoPilot && (
@@ -401,89 +401,64 @@ export default function SentimentAnalysisPage() {
           </div>
         </motion.header>
 
-        <div className="flex flex-col gap-12 max-w-[1600px] mx-auto pb-20">
+        <div className="flex flex-col gap-12 max-w-8xl mx-auto pb-20">
 
-          <div className="grid lg:grid-cols-2 gap-12 items-start">
-            <div className="space-y-6">
-              <div className="mx-auto w-full bg-[#0a0a0a] border border-white/5 rounded-[2rem] overflow-hidden group relative aspect-[9/16] max-h-[800px] shadow-2xl">
-                {data.video_url ? (
-                  <VideoPlayer
-                    videoUrl={data.video_url}
-                    duration={duration}
-                    currentTime={currentTime}
-                    isPlaying={isPlaying}
-                    onTimeUpdate={setCurrentTime}
-                    onPlayStateChange={setIsPlaying}
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/20">
-                      Video not available
-                    </p>
-                  </div>
-                )}
-
-                <div className={isPlaying ? "hidden" : "absolute inset-0 flex items-center justify-center"}>
-                  <button
-                    onClick={() => setIsPlaying(true)}
-                    className="w-20 h-20 rounded-full bg-white/5 hover:bg-aurora-cyan/20 transition-all flex items-center justify-center"
-                  >
-                    <Play fill="white" className="text-white" size={24} />
-                  </button>
+          <div className="grid lg:grid-cols-[450px_1fr] gap-10 items-start">
+            {/* Row 1: Video & Seismograph */}
+            <div className="ml-0 mr-auto w-full max-w-[450px] bg-[#0a0a0a] border border-white/5 rounded-[2rem] overflow-hidden group relative aspect-[9/16] max-h-[800px] shadow-2xl">
+              {data.video_url ? (
+                <VideoPlayer
+                  videoUrl={data.video_url}
+                  duration={duration}
+                  currentTime={currentTime}
+                  isPlaying={isPlaying}
+                  onTimeUpdate={setCurrentTime}
+                  onPlayStateChange={setIsPlaying}
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-black">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/20">
+                    Video not available
+                  </p>
                 </div>
+              )}
 
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
-                      >
-                        {isPlaying ? (
-                          <Pause fill="white" className="text-white" size={16} />
-                        ) : (
-                          <Play fill="white" className="text-white" size={16} />
-                        )}
-                      </button>
-                      <span className="text-xs font-black tabular-nums text-white/80">
-                        {Math.floor(currentTime / 60).toString().padStart(2, '0')}:
-                        {Math.floor(currentTime % 60).toString().padStart(2, '0')} / {duration}s
-                      </span>
-                    </div>
-                    <Maximize2 size={14} className="text-white/40" />
-                  </div>
-
-                  <div className="relative h-1 bg-white/20 rounded-full overflow-hidden">
-                    <motion.div
-                      className="absolute top-0 left-0 h-full bg-aurora-cyan"
-                      animate={{ width: `${(currentTime / duration) * 100}%` }}
-                      transition={{ ease: "linear", duration: 0.3 }}
-                    />
-                  </div>
-                </div>
+              <div className={isPlaying ? "hidden" : "absolute inset-0 flex items-center justify-center"}>
+                <button
+                  onClick={() => setIsPlaying(true)}
+                  className="w-20 h-20 rounded-full bg-white/5 hover:bg-aurora-cyan/20 transition-all flex items-center justify-center"
+                >
+                  <Play fill="white" className="text-white" size={24} />
+                </button>
               </div>
 
-              <div className="p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] space-y-4">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/30 flex items-center gap-2">
-                  <BarChart3 size={12} /> Narrative Synthesis
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <SummaryBadge label="Primary" value={primaryEmotion} color="cyan" />
-                  <SummaryBadge label="Secondary" value={secondaryEmotion} color="blue" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+                    >
+                      {isPlaying ? (
+                        <Pause fill="white" className="text-white" size={16} />
+                      ) : (
+                        <Play fill="white" className="text-white" size={16} />
+                      )}
+                    </button>
+                    <span className="text-xs font-black tabular-nums text-white/80">
+                      {Math.floor(currentTime / 60).toString().padStart(2, '0')}:
+                      {Math.floor(currentTime % 60).toString().padStart(2, '0')} / {duration}s
+                    </span>
+                  </div>
+                  <Maximize2 size={14} className="text-white/40" />
                 </div>
-                <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                  <div>
-                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Confidence Index</p>
-                    <p className="text-xl font-black italic">
-                      {Math.round(confidence * 100)}%
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Global Category</p>
-                    <p className="text-sm font-black uppercase text-aurora-cyan">
-                      {globalCategory}
-                    </p>
-                  </div>
+
+                <div className="relative h-1 bg-white/20 rounded-full overflow-hidden">
+                  <motion.div
+                    className="absolute top-0 left-0 h-full bg-aurora-cyan"
+                    animate={{ width: `${(currentTime / duration) * 100}%` }}
+                    transition={{ ease: "linear", duration: 0.3 }}
+                  />
                 </div>
               </div>
             </div>
@@ -512,9 +487,95 @@ export default function SentimentAnalysisPage() {
                 })}
               </div>
             </div>
+
+            {/* Row 2: Narrative Synthesis & Facial Expression Map */}
+            <div className="p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] space-y-4 max-w-[450px] ml-0 mr-auto w-full">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-white/30 flex items-center gap-2">
+                <BarChart3 size={12} /> Narrative Synthesis
+              </h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <SummaryBadge label="Primary" value={primaryEmotion} color="cyan" />
+                <SummaryBadge label="Secondary" value={secondaryEmotion} color="blue" />
+              </div>
+              <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                <div>
+                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Confidence Index</p>
+                  <p className="text-xl font-black italic">
+                    {Math.round(confidence * 100)}%
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Global Category</p>
+                  <p className="text-sm font-black uppercase text-aurora-cyan">
+                    {globalCategory}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] p-6 space-y-6">
+              <h2 className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                <User size={14} className="text-aurora-cyan" /> Character's Facial Expression Map
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-6">
+                {characterEmotions.map((char: any) => (
+                  <div key={char.id} className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center group hover:bg-white/[0.04] transition-colors">
+                    <div className="flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-2xl bg-aurora-cyan/10 flex items-center justify-center border border-aurora-cyan/20">
+                        <User size={24} className="text-aurora-cyan" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black uppercase italic mb-1">{char.name}</p>
+                        <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">
+                          SCREEN TIME: {Math.round(char.screenTime)}%
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-[10px] font-black uppercase mb-1 ${getEmotionColor(char.dominantEmotion)}`}>
+                        {char.dominantEmotion}
+                      </p>
+                      <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
+                        VOLATILITY: {char.volatility}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-12">
+            <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 space-y-6">
+              <h2 className="text-xs font-black uppercase tracking-widest text-white/50">
+                Dominance Timeline
+              </h2>
+              <div className="relative h-20 w-full bg-white/5 rounded-xl overflow-hidden flex">
+                {emotionTimeline.map((seg, i) => {
+                  const width = ((seg.end - seg.start) / duration) * 100;
+                  const color = getEmotionColorBg(seg.emotion);
+
+                  return (
+                    <TimelineSegment
+                      key={i}
+                      color={color}
+                      width={`${width}%`}
+                      label={seg.emotion}
+                      onClick={() => setCurrentTime(seg.start)}
+                      active={currentTime >= seg.start && currentTime <= seg.end}
+                    />
+                  );
+                })}
+
+                <motion.div
+                  className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_15px_#fff] z-10 pointer-events-none"
+                  animate={{ left: `${(currentTime / duration) * 100}%` }}
+                  transition={{ ease: "linear", duration: 0.5 }}
+                />
+              </div>
+            </div>
+
             <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] flex flex-col h-[600px]">
               <div className="p-8 border-b border-white/5 flex items-center justify-between">
                 <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-3">
@@ -555,68 +616,7 @@ export default function SentimentAnalysisPage() {
               </div>
             </div>
 
-            <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] p-8 space-y-6">
-              <h2 className="text-xs font-black uppercase tracking-widest text-white/50">
-                Dominance Timeline
-              </h2>
-              <div className="relative h-20 w-full bg-white/5 rounded-xl overflow-hidden flex">
-                {emotionTimeline.map((seg, i) => {
-                  const width = ((seg.end - seg.start) / duration) * 100;
-                  const color = getEmotionColorBg(seg.emotion);
-
-                  return (
-                    <TimelineSegment
-                      key={i}
-                      color={color}
-                      width={`${width}%`}
-                      label={seg.emotion}
-                      onClick={() => setCurrentTime(seg.start)}
-                      active={currentTime >= seg.start && currentTime <= seg.end}
-                    />
-                  );
-                })}
-
-                <motion.div
-                  className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_15px_#fff] z-10 pointer-events-none"
-                  animate={{ left: `${(currentTime / duration) * 100}%` }}
-                  transition={{ ease: "linear", duration: 0.5 }}
-                />
-              </div>
-            </div>
-
-            <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] p-6 space-y-6">
-              <h2 className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                <User size={14} className="text-aurora-cyan" /> Facial Expression Map
-              </h2>
-              <div className="grid sm:grid-cols-2 gap-6">
-                {characterEmotions.map((char: any) => (
-                  <div key={char.id} className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center group hover:bg-white/[0.04] transition-colors">
-                    <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 rounded-2xl bg-aurora-cyan/10 flex items-center justify-center border border-aurora-cyan/20">
-                        <User size={24} className="text-aurora-cyan" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black uppercase italic mb-1">{char.name}</p>
-                        <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">
-                          SCREEN TIME: {Math.round(char.screenTime)}%
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-[10px] font-black uppercase mb-1 ${getEmotionColor(char.dominantEmotion)}`}>
-                        {char.dominantEmotion}
-                      </p>
-                      <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">
-                        VOLATILITY: {char.volatility}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 p-6 bg-white/[0.02] border border-white/5 rounded-[2rem]">
-              <Info size={18} className="text-white/20 mt-1 shrink-0" />
+            <div className="flex items-start gap-4 p-6 bg-white/[0.02] border border-white/5 rounded-[2rem]">              <Info size={18} className="text-white/20 mt-1 shrink-0" />
               <p className="text-[11px] leading-relaxed text-white/30 font-medium font-display">
                 <span className="text-white/60 font-black uppercase tracking-widest">Transparency Protocol:</span> All emotional signals detected are strictly derived from high-fidelity
                 machine learning analysis of pixel volatility (facial landmarks) and acoustic frequency logs. Sentira does not infer

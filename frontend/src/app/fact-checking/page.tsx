@@ -238,7 +238,7 @@ export default function FactCheckingPage() {
                                 Claim Verification Protocol
                             </span>
                         </div>
-                        <h1 className="text-4xl font-black uppercase tracking-tighter italic">
+                        <h1 className="text-4xl font-black uppercase tracking-tighter">
                             Fact <span className="aurora-text">Checking</span>
                         </h1>
                     </div>

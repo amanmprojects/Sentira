@@ -116,7 +116,7 @@ export default function DetectingBiasPage() {
                             <ShieldAlert className="text-aurora-cyan" size={14} />
                             <span className="text-white/40 uppercase font-black tracking-[0.2em] text-[10px]">Narrative Security Matrix</span>
                         </div>
-                        <h1 className="text-4xl font-black uppercase tracking-tighter italic">
+                        <h1 className="text-4xl font-black uppercase tracking-tighter">
                             Detecting <span className="aurora-text">Bias</span>
                         </h1>
                     </div>
@@ -128,15 +128,13 @@ export default function DetectingBiasPage() {
                     <div className="lg:col-span-4 space-y-8">
                         {/* 1. Video Context Section */}
                         <div className="bg-[#050505] border border-white/5 rounded-[2.5rem] overflow-hidden group">
-                            <div className="aspect-video bg-[#020202] relative flex items-center justify-center">
-                                <Lock size={32} className="text-white/5 group-hover:text-aurora-cyan/20 transition-all" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                                <div className="absolute bottom-6 left-6 right-6">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-aurora-cyan mb-1">Source Context</p>
-                                    <h3 className="text-xs font-black uppercase tracking-tight truncate">
+                            <div className="p-8">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-aurora-cyan">Source Context</p>
+                                    <h3 className="text-xs font-black uppercase tracking-tight">
                                         {input.modality === 'video' ? 'Video Analysis' : 'Content Analysis'}
                                     </h3>
-                                    <p className="text-[10px] text-white/40 truncate">{input.content || input.file?.name}</p>
+                                    <p className="text-[10px] text-white/40 break-all">{input.content || input.file?.name}</p>
                                 </div>
                             </div>
                         </div>
@@ -229,6 +227,10 @@ export default function DetectingBiasPage() {
                                 Bias assessment based on aggregate signal processing.
                             </p>
                         </div>
+
+                        {/* Policy Conflicts & Evidence Matrix */}
+                        <PolicyConflicts conflicts={reelData.bias_analysis?.policy_conflicts} />
+                        <EvidenceMatrix metrics={reelData.bias_analysis?.evidence_matrix} />
                     </div>
 
                     {/* RIGHT COLUMN: Map & Analysis (8 Cols) */}
@@ -287,21 +289,12 @@ export default function DetectingBiasPage() {
                                         <span className="text-[8px] font-black uppercase text-white/50">Low</span>
                                     </div>
                                 </div>
+                               
                             </div>
                         </div>
 
-                        {/* 4. Neural Risk Vectors */}
-                        <NeuralRiskVectors riskVectors={reelData.bias_analysis?.risk_vectors} />
-
-                        {/* Bottom Row grid */}
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <PolicyConflicts conflicts={reelData.bias_analysis?.policy_conflicts} />
-                            <EvidenceMatrix metrics={reelData.bias_analysis?.evidence_matrix} />
-                        </div>
-
-                        {/* Finally, the bias cards at the bottom or as a side scroll?
-                            Let's keep them as a grid but maybe more compact */}
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* Bias Category Cards - Primary Analysis */}
+                        <div className="grid md:grid-cols-2 gap-6">
                             {biasCategories.length > 0 ? biasCategories.map(category => (
                                 <BiasCard
                                     key={category.id}
@@ -314,6 +307,9 @@ export default function DetectingBiasPage() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Neural Risk Vectors */}
+                        <NeuralRiskVectors riskVectors={reelData.bias_analysis?.risk_vectors} />
                     </div>
                 </div>
             </div>

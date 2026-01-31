@@ -43,7 +43,7 @@ export default function Sidebar() {
             {/* Branding - Click to go to Pulse (Dashboard) */}
             <Link href="/dashboard" className="flex items-center gap-3 py-6 mb-8 group relative z-10 hover:opacity-80 transition-opacity">
                 <BrandIcon size="md" />
-                <span className="text-xl font-black tracking-tighter uppercase">
+                <span className="text-2xl font-black tracking-tighter uppercase">
                     Sen<span className="aurora-text">tira</span>
                 </span>
             </Link>
