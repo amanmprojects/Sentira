@@ -16,7 +16,7 @@ import {
 import { useAnalysis } from "@/context/AnalysisContext";
 import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
-import jsPDF from "jspdf";
+import { generateReportPDF } from "./pdf";
 
 export default function ReportsPage() {
     const { sentimentData, reelData, input, isAutoPilot, setIsAutoPilot } = useAnalysis();
@@ -35,7 +35,7 @@ export default function ReportsPage() {
         }
     }, []);
 
-    const generatePDF = () => {
+    const generatePDF = async () => {
         if (!sentimentData && !reelData) {
             setStatusMessage("No analysis data available. Please analyze content first.");
             return;
@@ -46,84 +46,7 @@ export default function ReportsPage() {
 
         setTimeout(() => {
             try {
-                const doc = new jsPDF();
-
-                // Add Header
-                doc.setFontSize(22);
-                doc.setTextColor(0, 180, 200);
-                doc.text("SENTIRA NEURAL AUDIT REPORT", 20, 20);
-
-                doc.setFontSize(10);
-                doc.setTextColor(100, 100, 100);
-                doc.text(`GENERATED: ${new Date().toLocaleString()}`, 20, 30);
-                doc.text("SYSTEM: MULTIMODAL INTELLIGENCE ENGINE V1.0", 20, 35);
-
-                if (input?.content) {
-                    doc.text(`SOURCE: ${input.content}`, 20, 40);
-                }
-
-                // Content Analysis Section
-                doc.setFontSize(16);
-                doc.setTextColor(0, 0, 0);
-                doc.text("1. SENTIMENT ANALYSIS", 20, 55);
-
-                doc.setFontSize(12);
-                if (sentimentData) {
-                    doc.text(`Confidence Score: ${Math.round(sentimentData.confidence * 100)}%`, 25, 65);
-                    doc.text(`Global Category: ${sentimentData.global_category}`, 25, 75);
-                    doc.text("Emotional Cues Detected:", 25, 85);
-
-                    (sentimentData.emotion_timeline || []).slice(0, 5).forEach((seg, i) => {
-                        doc.text(`- ${seg.emotion} (${Math.round(seg.intensity * 100)}%) at ${seg.start.toFixed(1)}s`, 30, 95 + (i * 10));
-                    });
-                } else {
-                    doc.text("No sentiment data available", 25, 65);
-                }
-
-                // Bias Detection Section
-                doc.setFontSize(16);
-                doc.text("2. BIAS & INTEGRITY AUDIT", 20, 145);
-
-                doc.setFontSize(12);
-                if (reelData?.bias_analysis) {
-                    const bias = reelData.bias_analysis;
-                    doc.text(`Overall Risk Score: ${Math.round(bias.overall_score)}%`, 25, 155);
-                    doc.text(`Risk Level: ${bias.risk_level}`, 25, 165);
-                    doc.text("Bias Categories:", 25, 175);
-
-                    bias.categories.slice(0, 4).forEach((cat, i) => {
-                        doc.text(`- ${cat.label}: ${Math.round(cat.score)}% (${cat.detected ? 'Detected' : 'Not Detected'})`, 30, 185 + (i * 10));
-                    });
-
-                    // Add narrative summary
-                    doc.setFontSize(16);
-                    doc.text("3. NARRATIVE SUMMARY", 20, 225);
-                    doc.setFontSize(12);
-                    const splitCommentary = doc.splitTextToSize(reelData.commentary_summary || "No data available", 160);
-                    doc.text(splitCommentary, 25, 235);
-
-                    if (reelData.possible_issues && reelData.possible_issues.length > 0) {
-                        doc.text("Detected Issues:", 25, 275);
-                        reelData.possible_issues.slice(0, 3).forEach((issue, i) => {
-                            doc.text(`- ${issue}`, 30, 285 + (i * 10));
-                        });
-                    }
-                } else if (reelData) {
-                    const splitCommentary = doc.splitTextToSize(reelData.commentary_summary || "No bias analysis available", 160);
-                    doc.text(splitCommentary, 25, 155);
-
-                    if (reelData.possible_issues && reelData.possible_issues.length > 0) {
-                        doc.text("Detected Issues:", 25, 195);
-                        reelData.possible_issues.slice(0, 3).forEach((issue, i) => {
-                            doc.text(`- ${issue}`, 30, 205 + (i * 10));
-                        });
-                    }
-                } else {
-                    doc.text("No bias analysis data available", 25, 155);
-                }
-
-                // Save PDF
-                doc.save(`SENTIRA_REPORT_${new Date().getTime()}.pdf`);
+                generateReportPDF({ sentimentData, reelData, input });
 
                 setIsSynthesizing(false);
                 setIsComplete(true);
