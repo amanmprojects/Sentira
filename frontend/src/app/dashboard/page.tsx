@@ -308,7 +308,7 @@ function VideoInput({ value, input, onChange, onFileUpload, fileInputRef, onClea
                     <button
                         onClick={onLaunch}
                         disabled={isAnalyzing}
-                        className={`w-full py-5 rounded-xl font-black uppercase tracking-[0.2em] italic text-xs transition-all disabled:opacity-50 ${isDone
+                        className={`w-full py-5 rounded-xl font-black uppercase tracking-[0.2em] text-xs transition-all disabled:opacity-50 ${isDone
                             ? "bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]"
                             : "bg-aurora-cyan text-black shadow-[0_0_20px_rgba(0,242,254,0.3)] hover:scale-[1.01]"
                             }`}
@@ -346,7 +346,7 @@ function AudioInput({ value, onFileUpload, fileInputRef, onClear, onLaunch, isDo
                 <button
                     onClick={onLaunch}
                     disabled={isAnalyzing}
-                    className={`w-full py-5 rounded-xl font-black uppercase tracking-[0.2em] italic text-xs transition-all ${isDone
+                    className={`w-full py-5 rounded-xl font-black uppercase tracking-[0.2em] text-xs transition-all ${isDone
                         ? "bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]"
                         : "bg-aurora-cyan text-black shadow-[0_0_20px_rgba(0,242,254,0.3)]"
                         }`}
@@ -376,7 +376,7 @@ function TextInput({ value, onChange, onClear, onLaunch, isDone }: any) {
                 <button
                     onClick={onLaunch}
                     disabled={isAnalyzing}
-                    className={`w-full py-5 rounded-xl font-black uppercase tracking-[0.2em] italic text-xs transition-all ${isDone
+                    className={`w-full py-5 rounded-xl font-black uppercase tracking-[0.2em] text-xs transition-all ${isDone
                         ? "bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]"
                         : "bg-aurora-cyan text-black shadow-[0_0_20px_rgba(0,242,254,0.3)]"
                         }`}

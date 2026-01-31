@@ -260,10 +260,10 @@ export default function SentimentAnalysisPage() {
 
   useEffect(() => {
     if (isAutoPilot && data && !loading) {
-      setAutoPilotStatus("Neural Analysis Complete. Transferring to Bias Models in 5s...");
+      setAutoPilotStatus("Neural Analysis Complete. Transferring to Bias Detection in 8s...");
       const timer = setTimeout(() => {
         router.push("/detecting-bias");
-      }, 5000);
+      }, 8000);
       return () => clearTimeout(timer);
     }
   }, [isAutoPilot, data, loading, router]);

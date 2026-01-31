@@ -12,6 +12,7 @@ import {
     Compass,
     FileText,
     Settings,
+    Sparkles,
 } from "lucide-react";
 
 import BrandIcon from "./BrandIcon";
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
     { icon: <Scale size={20} />, label: "Detecting Bias", href: "/detecting-bias" },
     { icon: <CheckCircle size={20} />, label: "Fact Checking", href: "/fact-checking" },
     { icon: <Compass size={20} />, label: "Browse", href: "/browse" },
+    { icon: <Sparkles size={20} />, label: "AI Detection", href: "/ai-detection" },
     { icon: <TrendingUp size={20} />, label: "Trend Analysis", href: "/trend-analysis" },
     { icon: <FileText size={20} />, label: "Reports", href: "/reports" },
     { icon: <Settings size={20} />, label: "Settings", href: "/settings" },

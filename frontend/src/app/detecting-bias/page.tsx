@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ShieldAlert,
@@ -29,13 +30,25 @@ const IndiaMap = dynamic(() => import("@/components/IndiaMap"), {
 });
 
 export default function DetectingBiasPage() {
-    const { reelData, input } = useAnalysis();
+    const { reelData, input, isAutoPilot } = useAnalysis();
+    const router = useRouter();
     const [hoveredRegion, setHoveredRegion] = useState<{ name: string; bias: number } | null>(null);
+    const [autoPilotStatus, setAutoPilotStatus] = useState<string | null>(null);
 
     // Default/Fallback data
     const [biasCategories, setBiasCategories] = useState<BiasCategory[]>([]);
     const [overallScore, setOverallScore] = useState(0);
     const [riskLevel, setRiskLevel] = useState("Unknown");
+
+    useEffect(() => {
+        if (isAutoPilot && reelData && biasCategories.length > 0) {
+            setAutoPilotStatus("Bias Analysis Complete. Transferring to Fact Checking in 8s...");
+            const timer = setTimeout(() => {
+                router.push("/fact-checking");
+            }, 8000);
+            return () => clearTimeout(timer);
+        }
+    }, [isAutoPilot, reelData, biasCategories, router]);
 
     useEffect(() => {
         console.log("[BIAS PAGE] useEffect triggered, reelData:", reelData);

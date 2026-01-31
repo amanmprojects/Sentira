@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, Sparkles } from "lucide-react";
 import { useAnalysis } from "@/context/AnalysisContext";
@@ -65,8 +66,10 @@ function extractKeywords(text: string, maxKeywords: number = 8): string[] {
 }
 
 export default function BrowsePage() {
-    const { reelData, sentimentData } = useAnalysis();
+    const { reelData, sentimentData, isAutoPilot } = useAnalysis();
+    const router = useRouter();
     const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
+    const [autoPilotStatus, setAutoPilotStatus] = useState<string | null>(null);
 
     // Extract keywords from character analysis
     const keywords = useMemo(() => {
@@ -113,6 +116,16 @@ export default function BrowsePage() {
             setSelectedKeyword(keywords[0]);
         }
     }, [keywords, selectedKeyword]);
+
+    useEffect(() => {
+        if (isAutoPilot && keywords.length > 0) {
+            setAutoPilotStatus("Browse Complete. Transferring to AI Detection in 8s...");
+            const timer = setTimeout(() => {
+                router.push("/ai-detection");
+            }, 8000);
+            return () => clearTimeout(timer);
+        }
+    }, [isAutoPilot, keywords, router]);
 
     const handleKeywordChange = (keyword: string) => {
         setSelectedKeyword(keyword);

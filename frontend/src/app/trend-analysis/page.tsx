@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     TrendingUp,
@@ -1409,8 +1410,20 @@ function TrendForecast() {
 
 // Main Component
 export default function TrendAnalysisPage() {
-    const { input, isInputValid } = useAnalysis();
+    const { input, isInputValid, isAutoPilot } = useAnalysis();
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [autoPilotStatus, setAutoPilotStatus] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (isAutoPilot) {
+            setAutoPilotStatus("Trend Analysis Complete. Transferring to Reports in 4s...");
+            const timer = setTimeout(() => {
+                router.push("/reports");
+            }, 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [isAutoPilot, router]);
 
     // For demo purposes, we'll show the page even without input
     const showContent = true; // In production: isInputValid

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     CheckCircle,
@@ -201,14 +202,26 @@ function NoDataState() {
 }
 
 export default function FactCheckingPage() {
-    const { reelData, sentimentData, input } = useAnalysis();
+    const { reelData, sentimentData, input, isAutoPilot } = useAnalysis();
+    const router = useRouter();
     const [factCheckData, setFactCheckData] = useState<FactCheckReport | null>(null);
+    const [autoPilotStatus, setAutoPilotStatus] = useState<string | null>(null);
 
     useEffect(() => {
         if (reelData?.fact_check_report) {
             setFactCheckData(reelData.fact_check_report);
         }
     }, [reelData]);
+
+    useEffect(() => {
+        if (isAutoPilot && factCheckData) {
+            setAutoPilotStatus("Fact Check Complete. Transferring to Browse in 8s...");
+            const timer = setTimeout(() => {
+                router.push("/browse");
+            }, 8000);
+            return () => clearTimeout(timer);
+        }
+    }, [isAutoPilot, factCheckData, router]);
 
     if (!factCheckData) {
         return <NoDataState />;

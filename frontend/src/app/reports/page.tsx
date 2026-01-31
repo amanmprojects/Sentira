@@ -14,16 +14,26 @@ import {
     AlertTriangle
 } from "lucide-react";
 import { useAnalysis } from "@/context/AnalysisContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import jsPDF from "jspdf";
 
 export default function ReportsPage() {
-    const { sentimentData, reelData, input } = useAnalysis();
+    const { sentimentData, reelData, input, isAutoPilot, setIsAutoPilot } = useAnalysis();
     const [isSynthesizing, setIsSynthesizing] = useState(false);
     const [isComplete, setIsComplete] = useState(false);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [hasData, setHasData] = useState(!!(sentimentData || reelData));
+
+    useEffect(() => {
+        if (isAutoPilot && (sentimentData || reelData)) {
+            setStatusMessage("Auto-Pilot: Generating and downloading report...");
+            setTimeout(() => {
+                generatePDF();
+                setIsAutoPilot(false);
+            }, 2000);
+        }
+    }, []);
 
     const generatePDF = () => {
         if (!sentimentData && !reelData) {
