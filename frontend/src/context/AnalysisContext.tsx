@@ -20,6 +20,15 @@ interface AnalysisContextType {
     clearInput: () => void;
     isInputValid: boolean;
 
+    // Convenience accessors
+    modality: InputModality;
+    text: string;
+    videoUrl: string;
+    setText: (text: string) => void;
+    setVideoUrl: (url: string) => void;
+    setAudioFile: (file: File | null) => void;
+    setVideoFile: (file: File | null) => void;
+
     // Global Results
     sentimentData: SentimentAnalysisResponse | null;
     reelData: EnhancedReelAnalysis | null;
@@ -76,6 +85,30 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
         setReelData(null);
     };
 
+    const setText = (text: string) => {
+        setInputState((prev) => ({ ...prev, content: text }));
+        setSentimentData(null);
+        setReelData(null);
+    };
+
+    const setVideoUrl = (url: string) => {
+        setInputState((prev) => ({ ...prev, content: url }));
+        setSentimentData(null);
+        setReelData(null);
+    };
+
+    const setAudioFile = (file: File | null) => {
+        setInputState((prev) => ({ ...prev, file, modality: "audio" }));
+        setSentimentData(null);
+        setReelData(null);
+    };
+
+    const setVideoFile = (file: File | null) => {
+        setInputState((prev) => ({ ...prev, file, modality: "video" }));
+        setSentimentData(null);
+        setReelData(null);
+    };
+
     const isInputValid =
         input.content.trim().length > 0 || input.file !== null;
 
@@ -89,6 +122,13 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
                 setFile,
                 clearInput,
                 isInputValid,
+                modality: input.modality,
+                text: input.content,
+                videoUrl: input.content,
+                setText,
+                setVideoUrl,
+                setAudioFile,
+                setVideoFile,
                 sentimentData,
                 reelData,
                 setSentimentData,
