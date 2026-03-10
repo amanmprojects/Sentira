@@ -123,4 +123,4 @@ export default function DetectingBiasPage() {
             <RegionalHeatmapModal isOpen={showMap} onClose={() => setShowMap(false)} />
         </div>
     );
-}
+}   
