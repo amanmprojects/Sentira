@@ -955,6 +955,10 @@ async def _perform_full_sentiment_analysis(
                     response_schema=TemporalEmotionAnalysis,
                 ),
             )
+            if not response.text:
+                raise ValueError(
+                    f"Temporal analysis returned empty response. Candidates: {response.candidates}"
+                )
             return TemporalEmotionAnalysis.model_validate_json(response.text)
 
         async def analyze_character_global() -> CharacterGlobalAnalysis:
@@ -968,12 +972,22 @@ async def _perform_full_sentiment_analysis(
                     response_schema=CharacterGlobalAnalysis,
                 ),
             )
+            if not response.text:
+                raise ValueError(
+                    f"Character analysis returned empty response. Candidates: {response.candidates}"
+                )
             return CharacterGlobalAnalysis.model_validate_json(response.text)
 
         temporal_start = time.time()
-        temporal_result, character_result = await asyncio.gather(
-            analyze_temporal_emotions(), analyze_character_global()
-        )
+        try:
+            temporal_result, character_result = await asyncio.gather(
+                analyze_temporal_emotions(), analyze_character_global()
+            )
+        except Exception as gather_err:
+            print(
+                f"DEBUG: [SENTIMENT ERROR] Parallel analysis failed: {type(gather_err).__name__}: {gather_err}"
+            )
+            raise
         print(
             f"DEBUG: [TIME] Parallel sentiment analysis took {time.time() - temporal_start:.2f}s (TRUE ASYNC)"
         )
@@ -1119,6 +1133,7 @@ async def analyze_sentiment_url(request: ReelAnalysisRequest):
         )
 
     except Exception as e:
+        print(f"DEBUG: [SENTIMENT ENDPOINT ERROR] {type(e).__name__}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to analyze sentiment: {str(e)}"
         )

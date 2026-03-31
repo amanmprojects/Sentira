@@ -4,7 +4,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Load .env from project root (parent of backend/)
-env_path = Path(__file__).parent.parent / ".env"
+env_path = Path(__file__).parent / ".env"
 load_dotenv(env_path)
 
 api_key = os.getenv("GEMINI_API_KEY")
